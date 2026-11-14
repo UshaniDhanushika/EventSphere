@@ -17,11 +17,17 @@ from security import (
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 
+from agents import EventCoordinator
+from models import Booking as BookingModel
+from models import Ticket as TicketModel
+
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+coordinator = EventCoordinator()
 
 # Pydantic model for validating incoming data
 class EventCreate(BaseModel):
@@ -251,7 +257,7 @@ def get_current_user(
         )
 
     return user
-    
+
 # Only allow users with the required role
 def require_role(required_role):
 
@@ -300,3 +306,111 @@ def staff_check(
     return {"message": "Welcome, Staff!"}
 
 
+
+class AgentBookingRequest(BaseModel):
+    username: str
+    event_name: str
+    capacity: int
+
+
+
+@app.post("/agent-booking")
+def agent_booking(
+    request: AgentBookingRequest,
+    db: Session = Depends(get_db)
+):
+    result = coordinator.book_event(
+        request.username,
+        request.event_name,
+        request.capacity
+    )
+
+    if isinstance(result, str):
+        raise HTTPException(status_code=400, detail=result)
+
+    # Save booking in SQLite
+    booking = BookingModel(
+        username=result["booking"]["username"],
+        event_name=result["booking"]["event_name"],
+        venue=result["booking"]["venue"],
+        status="confirmed"
+    )
+
+    db.add(booking)
+    db.flush()
+
+    # Save ticket in SQLite
+    ticket = TicketModel(
+        ticket_code=result["ticket"]["ticket_id"],
+        booking_id=booking.id,
+        username=booking.username,
+        event_name=booking.event_name,
+        status="valid"
+    )
+
+    db.add(ticket)
+    db.commit()
+
+    db.refresh(booking)
+    db.refresh(ticket)
+
+    return {
+        "message": "Booking and ticket saved successfully",
+        "booking_id": booking.id,
+        "ticket_code": ticket.ticket_code,
+        "venue": booking.venue
+    }
+
+
+@app.get("/tickets/{ticket_code}/validate")
+def validate_ticket(
+    ticket_code: str,
+    db: Session = Depends(get_db)
+):
+    ticket = db.query(TicketModel).filter(
+        TicketModel.ticket_code == ticket_code
+    ).first()
+
+    if ticket is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Invalid ticket"
+        )
+
+    if ticket.status != "valid":
+        raise HTTPException(
+            status_code=400,
+            detail="Ticket has already been used"
+        )
+
+    return {
+        "message": "Ticket is valid",
+        "ticket_code": ticket.ticket_code,
+        "event_name": ticket.event_name
+    }
+
+
+@app.post("/tickets/{ticket_code}/check-in")
+def check_in_ticket(ticket_code: str, db: Session = Depends(get_db)):
+    ticket = db.query(TicketModel).filter(
+        TicketModel.ticket_code == ticket_code
+    ).first()
+
+    if ticket is None:
+        raise HTTPException(status_code=404, detail="Invalid ticket")
+
+    if ticket.status != "valid":
+        raise HTTPException(
+            status_code=400,
+            detail="Ticket has already been used"
+        )
+
+    ticket.status = "used"
+    db.commit()
+    db.refresh(ticket)
+
+    return {
+        "message": "Ticket checked in successfully",
+        "ticket_code": ticket.ticket_code,
+        "status": ticket.status
+    }
