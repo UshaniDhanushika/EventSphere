@@ -3,6 +3,7 @@ from sqlalchemy import Column, Integer, String, Float
 from database import Base
 
 
+
 class Event(Base):
 
     __tablename__ = "events"
@@ -18,7 +19,15 @@ class Event(Base):
     price = Column(Float, nullable=False)
 
 
-from database import engine, Base
-import models
 
-Base.metadata.create_all(bind=engine)
+class User(Base):
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    username = Column(String, unique=True, nullable=False)
+
+    password_hash = Column(String, nullable=False)
+
+    role = Column(String, default="attendee", nullable=False)
