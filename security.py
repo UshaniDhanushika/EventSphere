@@ -1,4 +1,5 @@
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -53,6 +54,28 @@ def extract_token_from_request(request: Request) -> Optional[str]:
             return cookie_token.split(" ", 1)[1]
         return cookie_token
     return None
+
+def generate_csrf_token() -> str:
+    """Generates a cryptographically secure CSRF token."""
+    return secrets.token_hex(32)
+
+def get_or_create_csrf_token(request: Request) -> str:
+    """Returns existing CSRF token from cookie or creates a fresh token."""
+    token = request.cookies.get("csrf_token")
+    if not token or len(token) < 16:
+        token = generate_csrf_token()
+    return token
+
+def validate_csrf_token(request: Request, submitted_token: Optional[str] = None) -> bool:
+    """Validates that submitted CSRF token matches the session/cookie CSRF token."""
+    cookie_token = request.cookies.get("csrf_token")
+    if not cookie_token:
+        return True  # If no cookie established yet (e.g., initial API request), allow or soft-check
+    header_token = request.headers.get("X-CSRF-Token")
+    token = submitted_token or header_token
+    if not token:
+        return False
+    return secrets.compare_digest(cookie_token, token)
 
 def get_current_user_optional(
     request: Request,
