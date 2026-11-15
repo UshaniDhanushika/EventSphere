@@ -1,9 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import (
     Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
 )
 from sqlalchemy.orm import relationship
 from database import Base
+
+
+def utcnow():
+    """Return naive UTC datetime compatible with SQLite DateTime columns without deprecation warnings."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class User(Base):
@@ -14,7 +19,7 @@ class User(Base):
     email = Column(String(150), unique=True, nullable=True)
     password_hash = Column(String(255), nullable=False)
     role = Column(String(20), default="attendee", nullable=False)  # admin, staff, attendee
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     bookings = relationship("Booking", back_populates="user")
     tickets = relationship("Ticket", back_populates="user")
@@ -33,7 +38,7 @@ class Venue(Base):
     image_url = Column(String(500), default="")
     hourly_rate = Column(Float, default=100.0)
     open_for_private_hire = Column(Boolean, default=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     events = relationship("Event", back_populates="venue")
     hires = relationship("PrivateHire", back_populates="venue")
@@ -51,7 +56,7 @@ class Event(Base):
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     status = Column(String(20), default="published")  # draft, published, cancelled
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     venue = relationship("Venue", back_populates="events")
     ticket_categories = relationship("TicketCategory", back_populates="event", cascade="all, delete-orphan")
@@ -88,7 +93,7 @@ class Booking(Base):
     payment_reference = Column(String(64), nullable=False)
     status = Column(String(20), default="confirmed")  # confirmed, cancelled, refunded
     refund_amount = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     user = relationship("User", back_populates="bookings")
     event = relationship("Event", back_populates="bookings")
@@ -107,7 +112,7 @@ class Ticket(Base):
     status = Column(String(20), default="valid")  # valid, admitted, cancelled
     admitted_at = Column(DateTime, nullable=True)
     scan_count = Column(Integer, default=0)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     booking = relationship("Booking", back_populates="tickets")
     user = relationship("User", back_populates="tickets")
@@ -128,7 +133,7 @@ class PrivateHire(Base):
     status = Column(String(20), default="confirmed")  # confirmed, escalated, approved, rejected
     alternative_proposal = Column(Text, nullable=True)
     admin_notes = Column(Text, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     user = relationship("User", back_populates="hires")
     venue = relationship("Venue", back_populates="hires")
@@ -144,7 +149,7 @@ class WaitlistEntry(Base):
     status = Column(String(20), default="waiting")  # waiting, offered, claimed, expired
     offered_at = Column(DateTime, nullable=True)
     expires_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     event = relationship("Event", back_populates="waitlist_entries")
     user = relationship("User")
@@ -160,7 +165,7 @@ class AgentMessage(Base):
     receiver = Column(String(50), nullable=False)
     performative = Column(String(20), nullable=False)  # REQUEST, AGREE, REFUSE, PROPOSE, INFORM, FAILURE
     content_json = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    created_at = Column(DateTime, default=utcnow, index=True)
 
 
 class Notification(Base):
@@ -171,7 +176,7 @@ class Notification(Base):
     title = Column(String(150), nullable=False)
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utcnow)
 
     user = relationship("User", back_populates="notifications")
 
@@ -183,4 +188,4 @@ class AgentBelief(Base):
     agent_name = Column(String(50), index=True, nullable=False)
     belief_key = Column(String(100), index=True, nullable=False)
     belief_value = Column(Text, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=utcnow, onupdate=utcnow)
