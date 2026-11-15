@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+
+{% block title %}Organiser Admin Dashboard - EventSphere{% endblock %}
+
+{% block head %}
+<!-- Chart.js CDN for interactive visual analytics -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">Organiser Admin Dashboard</h3>
+            <p class="text-secondary small mb-0">Live event metrics, agent message trace log, and space management.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newVenueModal">
+                <i class="bi bi-plus-circle me-1"></i> Add Venue
+            </button>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#newEventModal">
+                <i class="bi bi-calendar-plus me-1"></i> Create Event
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Summary Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Total Events</div>
+                        <h4 class="fw-bold text-dark mb-0">{{ stats.total_events }}</h4>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary p-2 fs-5 rounded-3"><i class="bi bi-calendar-event"></i></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Tickets Sold</div>
+                        <h4 class="fw-bold text-dark mb-0">{{ stats.total_tickets_sold }}</h4>
+                    </div>
+                    <span class="badge bg-success-subtle text-success p-2 fs-5 rounded-3"><i class="bi bi-ticket-perforated"></i></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Simulated Revenue</div>
+                        <h4 class="fw-bold text-dark mb-0">${{ "%.2f"|format(stats.total_revenue) }}</h4>
+                    </div>
+                    <span class="badge bg-info-subtle text-info p-2 fs-5 rounded-3"><i class="bi bi-cash-stack"></i></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Admitted Check-ins</div>
+                        <h4 class="fw-bold text-dark mb-0">{{ stats.total_checkins }}</h4>
+                    </div>
+                    <span class="badge bg-warning-subtle text-warning p-2 fs-5 rounded-3"><i class="bi bi-check2-all"></i></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills mb-4 gap-2 border-bottom pb-3" id="adminTabs" role="tablist">
+        <li class="nav-item">
+            <button class="nav-link active btn-sm" data-bs-toggle="pill" data-bs-target="#tab-events">
+                <i class="bi bi-table me-1"></i> Events & Sales
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link btn-sm" data-bs-toggle="pill" data-bs-target="#tab-charts">
+                <i class="bi bi-bar-chart-line me-1"></i> Visual Analytics
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link btn-sm position-relative" data-bs-toggle="pill" data-bs-target="#tab-agents">
+                <i class="bi bi-cpu me-1"></i> Multi-Agent Message Trace Log
+                <span class="badge bg-danger rounded-pill ms-1">{{ agent_messages|length }}</span>
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link btn-sm position-relative" data-bs-toggle="pill" data-bs-target="#tab-hires">
+                <i class="bi bi-clock-history me-1"></i> Escalated Venue Hires
+                {% if escalated_hires %}
+                <span class="badge bg-warning text-dark rounded-pill ms-1">{{ escalated_hires|length }}</span>
+                {% endif %}
+            </button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link btn-sm" data-bs-toggle="pill" data-bs-target="#tab-venues">
+                <i class="bi bi-building me-1"></i> Venues
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- 1. Events & Sales Tab -->
+        <div class="tab-pane fade show active" id="tab-events">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="card-header bg-white py-3 fw-bold">Campus Events Overview</div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>Event Title</th>
+                                <th>Venue & Capacity</th>
+                                <th>Tickets Sold / Total</th>
+                                <th>Check-ins</th>
+                                <th>Simulated Revenue</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            {% for e in event_metrics %}
+                            <tr>
+                                <td>
+                                    <strong class="text-dark">{{ e.title }}</strong>
+                                    <div class="text-muted">{{ e.category }} &bull; {{ e.start_time.strftime('%b %d, %Y') }}</div>
+                                </td>
+                                <td>
+                                    {{ e.venue_name }}
+                                    <div class="text-muted">Max Cap: {{ e.venue_capacity }}</div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 6px; min-width: 60px;">
+                                            <div class="progress-bar bg-primary" style="width: {{ e.fill_percentage }}%;"></div>
+                                        </div>
+                                        <span>{{ e.sold }} / {{ e.total_capacity }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success">{{ e.checkins }} admitted</span>
+                                </td>
+                                <td>
+                                    <strong>${{ "%.2f"|format(e.revenue) }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge {% if e.status == 'published' %}bg-success{% elif e.status == 'draft' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                        {{ e.status|upper }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    {% if e.status != 'cancelled' %}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="cancelEvent({{ e.id }}, '{{ e.title }}')">
+                                        Cancel & Refund
+                                    </button>
+                                    {% else %}
+                                    <span class="text-muted small">Refunded</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Charts Tab -->
+        <div class="tab-pane fade" id="tab-charts">
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                        <h6 class="fw-bold mb-3">Ticket Sales by Event</h6>
+                        <canvas id="salesChart" height="220"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 bg-white">
+                        <h6 class="fw-bold mb-3">Check-ins vs Remaining Capacity</h6>
+                        <canvas id="checkinChart" height="220"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Multi-Agent Message Trace Log Tab -->
+        <div class="tab-pane fade" id="tab-agents">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="fw-bold mb-0">Multi-Agent Communication Trace Log</h6>
+                        <small class="text-secondary">Messages exchanged using structured JSON with performatives (ICA 02 Part B)</small>
+                    </div>
+                    <span class="badge bg-light text-dark border">Auto-Updated</span>
+                </div>
+                <div class="table-responsive" style="max-height: 520px;">
+                    <table class="table table-sm table-striped align-middle mb-0 font-monospace small">
+                        <thead class="table-dark small sticky-top">
+                            <tr>
+                                <th>Conversation ID</th>
+                                <th>Timestamp</th>
+                                <th>Sender</th>
+                                <th>Receiver</th>
+                                <th>Performative</th>
+                                <th>JSON Content Payload</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in agent_messages %}
+                            <tr>
+                                <td><code>{{ m.conversation_id }}</code></td>
+                                <td class="text-muted">{{ m.created_at.strftime('%H:%M:%S') }}</td>
+                                <td><span class="badge bg-secondary">{{ m.sender }}</span></td>
+                                <td><span class="badge bg-dark">{{ m.receiver }}</span></td>
+                                <td><span class="agent-performative perf-{{ m.performative }}">{{ m.performative }}</span></td>
+                                <td>
+                                    <pre class="mb-0 text-wrap small" style="max-width: 400px; font-size: 0.75rem;">{{ m.content_json }}</pre>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No agent messages logged yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Escalated Private Hires Tab -->
+        <div class="tab-pane fade" id="tab-hires">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="card-header bg-white py-3 fw-bold">Private Hires Requiring Organiser Decision</div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 small">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Venue</th>
+                                <th>Applicant</th>
+                                <th>Date & Time</th>
+                                <th>Guests</th>
+                                <th>Purpose</th>
+                                <th>Price</th>
+                                <th class="text-end">Decision</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for h in escalated_hires %}
+                            <tr>
+                                <td><strong>{{ h.venue.name }}</strong></td>
+                                <td>{{ h.user.username }}</td>
+                                <td>{{ h.start_time.strftime('%b %d, %Y %I:%M %p') }} - {{ h.end_time.strftime('%I:%M %p') }}</td>
+                                <td><span class="badge bg-warning text-dark">{{ h.guest_count }} guests</span></td>
+                                <td>{{ h.purpose }}</td>
+                                <td>${{ "%.2f"|format(h.total_price) }}</td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-success py-1" onclick="decideHire({{ h.id }}, 'approved')">Approve</button>
+                                    <button class="btn btn-sm btn-outline-danger py-1" onclick="decideHire({{ h.id }}, 'rejected')">Reject</button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">No escalated hire requests awaiting approval.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Venues Tab -->
+        <div class="tab-pane fade" id="tab-venues">
+            <div class="row g-3">
+                {% for v in venues %}
+                <div class="col-md-6 col-lg-3">
+                    <div class="card border-0 shadow-sm rounded-3 h-100 p-3">
+                        <h6 class="fw-bold mb-1">{{ v.name }}</h6>
+                        <div class="small text-muted mb-2">{{ v.location }}</div>
+                        <ul class="list-unstyled small mb-3">
+                            <li><strong>Capacity:</strong> {{ v.capacity }} people</li>
+                            <li><strong>Hourly Rate:</strong> ${{ v.hourly_rate }}/hr</li>
+                            <li><strong>Private Hire:</strong> {% if v.open_for_private_hire %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-secondary">No</span>{% endif %}</li>
+                        </ul>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: New Venue -->
+<div class="modal fade" id="newVenueModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content border-0 shadow" onsubmit="createVenue(event)">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add University Venue</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body small">
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Venue Name</label>
+                    <input type="text" id="vName" class="form-control form-control-sm" required placeholder="e.g. Science Pavilion">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Location</label>
+                    <input type="text" id="vLoc" class="form-control form-control-sm" required placeholder="e.g. East Campus, Ground Floor">
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Capacity</label>
+                        <input type="number" id="vCap" class="form-control form-control-sm" required min="1" placeholder="200">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Hourly Hire Rate ($)</label>
+                        <input type="number" id="vRate" class="form-control form-control-sm" required min="0" step="0.01" placeholder="100.00">
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Description</label>
+                    <textarea id="vDesc" class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="vHire" checked>
+                    <label class="form-check-label">Open for Private Hire</label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary btn-sm">Create Venue</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: New Event -->
+<div class="modal fade" id="newEventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form class="modal-content border-0 shadow" onsubmit="createEvent(event)">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Publish New Event (VenueAgent Validated)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body small">
+                <div class="row g-2 mb-2">
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Event Title</label>
+                        <input type="text" id="eTitle" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Category</label>
+                        <select id="eCat" class="form-select form-select-sm" required>
+                            <option value="Academic">Academic</option>
+                            <option value="Cultural">Cultural</option>
+                            <option value="Workshop">Workshop</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Clubs">Clubs</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label fw-semibold">Venue</label>
+                    <select id="eVenue" class="form-select form-select-sm" required>
+                        {% for v in venues %}
+                        <option value="{{ v.id }}">{{ v.name }} (Max Cap: {{ v.capacity }})</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">VenueAgent will check for scheduling clashes and the 1-hour turnaround buffer before agreeing.</div>
+                </div>
+                <div class="row g-2 mb-2">
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">Start Date & Time</label>
+                        <input type="datetime-local" id="eStart" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label fw-semibold">End Date & Time</label>
+                        <input type="datetime-local" id="eEnd" class="form-control form-control-sm" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Description</label>
+                    <textarea id="eDesc" class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+
+                <h6 class="fw-bold border-top pt-2">Ticket Categories (At least 1)</h6>
+                <div class="row g-2 mb-2">
+                    <div class="col-4">
+                        <label class="form-label">Category Name</label>
+                        <input type="text" id="tName" class="form-control form-control-sm" value="Standard Admission" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Price ($)</label>
+                        <input type="number" id="tPrice" class="form-control form-control-sm" value="15.00" min="0" step="0.01" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" id="tQty" class="form-control form-control-sm" value="100" min="1" required>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary btn-sm">Submit to VenueAgent & Publish</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Chart.js initialization
+document.addEventListener('DOMContentLoaded', () => {
+    const labels = {{ chart_labels|tojson }};
+    const salesData = {{ chart_sales|tojson }};
+    const checkinsData = {{ chart_checkins|tojson }};
+
+    if (document.getElementById('salesChart')) {
+        new Chart(document.getElementById('salesChart'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Tickets Sold',
+                    data: salesData,
+                    backgroundColor: '#4f46e5',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    if (document.getElementById('checkinChart')) {
+        new Chart(document.getElementById('checkinChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Admitted Check-ins',
+                    data: checkinsData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+});
+
+async function createVenue(e) {
+    e.preventDefault();
+    const payload = {
+        name: document.getElementById('vName').value,
+        location: document.getElementById('vLoc').value,
+        capacity: parseInt(document.getElementById('vCap').value),
+        hourly_rate: parseFloat(document.getElementById('vRate').value),
+        description: document.getElementById('vDesc').value,
+        open_for_private_hire: document.getElementById('vHire').checked
+    };
+    try {
+        const res = await fetch('/api/venues', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.detail || 'Failed');
+        alert('Venue created!');
+        window.location.reload();
+    } catch (err) { alert(err.message); }
+}
+
+async function createEvent(e) {
+    e.preventDefault();
+    const payload = {
+        title: document.getElementById('eTitle').value,
+        category: document.getElementById('eCat').value,
+        venue_id: parseInt(document.getElementById('eVenue').value),
+        start_time: document.getElementById('eStart').value,
+        end_time: document.getElementById('eEnd').value,
+        description: document.getElementById('eDesc').value,
+        ticket_categories: [{
+            name: document.getElementById('tName').value,
+            price: parseFloat(document.getElementById('tPrice').value),
+            quantity: parseInt(document.getElementById('tQty').value)
+        }]
+    };
+    try {
+        const res = await fetch('/api/events', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.detail || 'Event creation refused by VenueAgent');
+        alert('Event successfully created and published!');
+        window.location.reload();
+    } catch (err) { alert(err.message); }
+}
+
+async function cancelEvent(id, title) {
+    if (!confirm(`Cancel event '${title}'? BookingAgent will immediately execute full 100% refunds for all ticket holders.`)) return;
+    try {
+        const res = await fetch(`/api/events/${id}/cancel`, { method: 'POST' });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.detail);
+        alert('Event cancelled and all attendees refunded in full.');
+        window.location.reload();
+    } catch (err) { alert(err.message); }
+}
+
+async function decideHire(id, decision) {
+    try {
+        const res = await fetch(`/api/admin/hires/${id}/decision`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ decision: decision })
+        });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.detail);
+        alert(`Private hire request marked ${decision}.`);
+        window.location.reload();
+    } catch (err) { alert(err.message); }
+}
+</script>
+{% endblock %}

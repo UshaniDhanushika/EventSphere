@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} - EventSphere{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <a href="/" class="btn btn-sm btn-link text-decoration-none text-secondary mb-3 ps-0">
+        <i class="bi bi-arrow-left me-1"></i> Back to Events
+    </a>
+
+    <div class="row g-4">
+        <!-- Event Details Column -->
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                <img src="{{ event.image_url or 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900' }}" 
+                     alt="{{ event.title }}" 
+                     class="w-100 object-fit-cover" 
+                     style="max-height: 320px;"
+                     onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900';">
+                
+                <div class="card-body p-4">
+                    <span class="badge bg-primary-subtle text-primary mb-2">{{ event.category }}</span>
+                    <h2 class="fw-bold text-dark mb-3">{{ event.title }}</h2>
+                    <p class="text-secondary">{{ event.description }}</p>
+
+                    <div class="row g-3 py-3 border-top border-bottom my-3">
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-calendar-check text-primary fs-4"></i>
+                                <div>
+                                    <div class="small text-muted">Date & Time</div>
+                                    <div class="fw-semibold small">{{ event.start_time.strftime('%a, %d %b %Y') }}</div>
+                                    <div class="text-muted small">{{ event.start_time.strftime('%I:%M %p') }} - {{ event.end_time.strftime('%I:%M %p') }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-geo-alt text-danger fs-4"></i>
+                                <div>
+                                    <div class="small text-muted">Venue & Capacity</div>
+                                    <div class="fw-semibold small">{{ event.venue.name }}</div>
+                                    <div class="text-muted small">{{ event.venue.location }} (Max {{ event.venue.capacity }})</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border small text-muted">
+                        <i class="bi bi-info-circle me-1 text-primary"></i> 
+                        <strong>Autonomous Multi-Agent Policy:</strong> Booking limit is 6 tickets per transaction. Cancellations >24h prior qualify for a 100% simulated refund; 2-24h for 50%; &lt;2h no refund.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Selection & Booking Column -->
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 80px;">
+                <h4 class="fw-bold mb-3">Select Tickets</h4>
+
+                <form id="bookingForm" onsubmit="initiateBooking(event)">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Choose Category</label>
+                        <div class="d-flex flex-column gap-2" id="categoryOptions">
+                            {% for cat in event.ticket_categories %}
+                            {% set left = cat.total_quantity - cat.sold_quantity %}
+                            <label class="card p-3 border rounded-3 cursor-pointer {% if left <= 0 %}bg-light opacity-50{% endif %}" style="cursor: pointer;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="radio" name="ticket_category_id" value="{{ cat.id }}" 
+                                               data-price="{{ cat.price }}" data-available="{{ left }}" data-name="{{ cat.name }}"
+                                               {% if left <= 0 %}disabled{% elif loop.first %}checked{% endif %}
+                                               onchange="updateTotal()">
+                                        <label class="form-check-label fw-bold small text-dark ms-1">
+                                            {{ cat.name }}
+                                        </label>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-bold text-primary">${{ "%.2f"|format(cat.price) }}</span>
+                                        <div class="small {% if left > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {{ left }} left
+                                        </div>
+                                    </div>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold">Quantity (Max 6)</label>
+                        <select name="quantity" id="ticketQuantity" class="form-select form-select-sm" onchange="updateTotal()">
+                            <option value="1">1 Ticket</option>
+                            <option value="2">2 Tickets</option>
+                            <option value="3">3 Tickets</option>
+                            <option value="4">4 Tickets</option>
+                            <option value="5">5 Tickets</option>
+                            <option value="6">6 Tickets</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-light p-3 rounded-3 mb-3">
+                        <div class="d-flex justify-content-between small text-muted mb-1">
+                            <span>Unit Price:</span>
+                            <span id="summaryUnitPrice">$0.00</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted mb-2">
+                            <span>Quantity:</span>
+                            <span id="summaryQuantity">1</span>
+                        </div>
+                        <div class="d-flex justify-content-between fw-bold text-dark fs-5 pt-2 border-top">
+                            <span>Total Due:</span>
+                            <span id="summaryTotalPrice" class="text-primary">$0.00</span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                        <i class="bi bi-credit-card me-1"></i> Proceed to Simulated Payment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Simulated Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold">Simulated Sandbox Checkout</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning py-2 small mb-3">
+                    <i class="bi bi-shield-lock me-1"></i> <strong>Simulated Sandbox:</strong> No real bank card or financial data is collected or needed.
+                </div>
+                
+                <div class="card p-3 bg-light border-0 mb-3 small">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Event:</span>
+                        <strong class="text-truncate" style="max-width: 200px;">{{ event.title }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Category:</span>
+                        <strong id="modalCatName">Standard</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Quantity:</span>
+                        <strong id="modalQty">1</strong>
+                    </div>
+                    <div class="d-flex justify-content-between fw-bold text-dark pt-2 border-top">
+                        <span>Amount to Authorize:</span>
+                        <strong class="text-primary fs-6" id="modalTotal">$0.00</strong>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Simulated Card Reference</label>
+                    <input type="text" class="form-control form-control-sm" value="•••• •••• •••• 4242 (TEST-SIMULATION)" readonly>
+                </div>
+
+                <div id="bookingError" class="alert alert-danger py-2 small d-none"></div>
+
+                <button type="button" class="btn btn-success w-100 py-2 fw-semibold" id="btnConfirmPay" onclick="confirmPayment()">
+                    <span id="btnPayText"><i class="bi bi-check2-circle me-1"></i> Confirm & Authorize Booking</span>
+                    <span id="btnPaySpinner" class="spinner-border spinner-border-sm d-none"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSelected = {};
+
+function updateTotal() {
+    const radio = document.querySelector('input[name="ticket_category_id"]:checked');
+    if (!radio) return;
+    const price = parseFloat(radio.dataset.price);
+    const qty = parseInt(document.getElementById('ticketQuantity').value);
+    const total = price * qty;
+
+    currentSelected = {
+        category_id: parseInt(radio.value),
+        category_name: radio.dataset.name,
+        price: price,
+        quantity: qty,
+        total: total
+    };
+
+    document.getElementById('summaryUnitPrice').innerText = '$' + price.toFixed(2);
+    document.getElementById('summaryQuantity').innerText = qty;
+    document.getElementById('summaryTotalPrice').innerText = '$' + total.toFixed(2);
+}
+
+document.addEventListener('DOMContentLoaded', updateTotal);
+
+function initiateBooking(e) {
+    e.preventDefault();
+    updateTotal();
+    document.getElementById('modalCatName').innerText = currentSelected.category_name;
+    document.getElementById('modalQty').innerText = currentSelected.quantity;
+    document.getElementById('modalTotal').innerText = '$' + currentSelected.total.toFixed(2);
+    document.getElementById('bookingError').classList.add('d-none');
+    new bootstrap.Modal(document.getElementById('paymentModal')).show();
+}
+
+async function confirmPayment() {
+    const btn = document.getElementById('btnConfirmPay');
+    const spinner = document.getElementById('btnPaySpinner');
+    const txt = document.getElementById('btnPayText');
+    const errBox = document.getElementById('bookingError');
+
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    txt.classList.add('d-none');
+    errBox.classList.add('d-none');
+
+    try {
+        const res = await fetch('/api/bookings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event_id: {{ event.id }},
+                ticket_category_id: currentSelected.category_id,
+                quantity: currentSelected.quantity
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.detail || 'Booking request rejected by BookingAgent.');
+        }
+
+        // Successful booking! Redirect to user's tickets
+        window.location.href = '/my-tickets?success=' + encodeURIComponent(data.booking_reference);
+    } catch (err) {
+        errBox.innerText = err.message;
+        errBox.classList.remove('d-none');
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+        txt.classList.remove('d-none');
+    }
+}
+</script>
+{% endblock %}

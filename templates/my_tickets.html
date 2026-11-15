@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block title %}My Tickets & Bookings - EventSphere{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">My Digital Tickets & Bookings</h3>
+            <p class="text-secondary small mb-0">Show your unique QR code at the entrance for admission.</p>
+        </div>
+        <a href="/" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i> Browse More
+        </a>
+    </div>
+
+    {% if success_ref %}
+    <div class="alert alert-success alert-dismissible fade show small mb-4 shadow-sm" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <strong>Booking Successful!</strong> Reference: <code>{{ success_ref }}</code>. Your digital tickets are ready below.
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+
+    {% if bookings %}
+    <div class="d-flex flex-column gap-3">
+        {% for b in bookings %}
+        <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+            <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div>
+                    <span class="fw-bold text-dark me-2">Ref: {{ b.booking_reference }}</span>
+                    <span class="badge {% if b.status == 'confirmed' %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-secondary{% endif %}">
+                        {{ b.status|upper }}
+                    </span>
+                    <span class="text-muted small ms-2">{{ b.created_at.strftime('%b %d, %Y • %I:%M %p') }}</span>
+                </div>
+                <div class="text-end">
+                    <span class="small text-muted me-2">Paid: ${{ "%.2f"|format(b.total_price) }} ({{ b.payment_reference }})</span>
+                    {% if b.status == 'confirmed' %}
+                    <button class="btn btn-sm btn-outline-danger" onclick="confirmCancelBooking({{ b.id }}, '{{ b.booking_reference }}')">
+                        <i class="bi bi-x-circle me-1"></i> Cancel Booking
+                    </button>
+                    {% elif b.status == 'cancelled' or b.status == 'refunded' %}
+                    <span class="badge bg-danger-subtle text-danger">Refunded: ${{ "%.2f"|format(b.refund_amount) }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card-body p-3">
+                <div class="row align-items-center g-3">
+                    <div class="col-md-7">
+                        <h5 class="fw-bold text-dark mb-1">{{ b.event.title }}</h5>
+                        <p class="text-muted small mb-2">
+                            <i class="bi bi-geo-alt me-1 text-danger"></i> {{ b.event.venue.name }} &bull;
+                            <i class="bi bi-clock me-1 text-primary"></i> {{ b.event.start_time.strftime('%a, %d %b %Y %I:%M %p') }}
+                        </p>
+                        <span class="badge bg-light text-dark border">
+                            Category: {{ b.ticket_category.name }} ({{ b.quantity }} ticket{% if b.quantity > 1 %}s{% endif %})
+                        </span>
+                    </div>
+
+                    <!-- Individual Tickets with QR Codes -->
+                    <div class="col-md-5">
+                        <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                            {% for ticket in b.tickets %}
+                            <div class="card p-2 border text-center shadow-none bg-light" style="min-width: 140px;">
+                                <div class="small fw-bold text-truncate" style="max-width: 130px;">{{ ticket.ticket_code }}</div>
+                                <div class="my-1">
+                                    <span class="badge {% if ticket.status == 'valid' %}bg-success{% elif ticket.status == 'admitted' %}bg-primary{% else %}bg-secondary{% endif %}" style="font-size: 0.65rem;">
+                                        {{ ticket.status|upper }}
+                                    </span>
+                                </div>
+                                <button class="btn btn-sm btn-primary py-1 px-2" style="font-size: 0.75rem;" onclick="viewQR('{{ ticket.ticket_code }}', '{{ b.event.title }}', '{{ ticket.status }}')">
+                                    <i class="bi bi-qr-code me-1"></i> View QR
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm rounded-4 p-5 text-center">
+        <i class="bi bi-ticket-perforated fs-1 text-muted mb-3"></i>
+        <h5 class="fw-bold">No tickets yet</h5>
+        <p class="text-secondary small mb-3">You haven't booked any event tickets yet.</p>
+        <div>
+            <a href="/" class="btn btn-primary btn-sm">Explore Campus Events</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- QR Code Display Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow text-center p-3">
+            <div class="modal-header border-0 pb-0 justify-content-end">
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <span class="badge bg-primary-subtle text-primary mb-2">Digital Boarding Pass</span>
+                <h6 class="fw-bold text-dark text-truncate mb-2" id="qrEventTitle">Event Title</h6>
+                
+                <div class="p-3 bg-white border rounded-3 my-2 shadow-sm d-inline-block">
+                    <img id="qrImage" src="" alt="Ticket QR Code" class="img-fluid" style="width: 200px; height: 200px;">
+                </div>
+
+                <div class="mt-2">
+                    <code class="fw-bold fs-6 text-dark" id="qrCodeText">TK-XXXXXX</code>
+                </div>
+                <div class="mt-1">
+                    <span class="badge" id="qrStatusBadge">VALID</span>
+                </div>
+                <p class="text-muted small mt-2 mb-0">Show this screen to gate staff for camera scanner check-in.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewQR(code, eventTitle, status) {
+    document.getElementById('qrEventTitle').innerText = eventTitle;
+    document.getElementById('qrCodeText').innerText = code;
+    document.getElementById('qrImage').src = '/api/tickets/' + encodeURIComponent(code) + '/qr.png';
+    
+    const badge = document.getElementById('qrStatusBadge');
+    badge.innerText = status.toUpperCase();
+    badge.className = 'badge ' + (status === 'valid' ? 'bg-success' : (status === 'admitted' ? 'bg-primary' : 'bg-secondary'));
+
+    new bootstrap.Modal(document.getElementById('qrModal')).show();
+}
+
+async function confirmCancelBooking(bookingId, ref) {
+    if (!confirm(`Are you sure you want to cancel booking ${ref}? BookingAgent will apply the cancellation refund policy based on event timing.`)) {
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/bookings/${bookingId}/cancel`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Cancellation failed');
+
+        alert(`Booking cancelled! Refund: $${data.refund_amount} (${data.policy_applied}). Freed seats offered to waitlist.`);
+        window.location.reload();
+    } catch (err) {
+        alert(err.message);
+    }
+}
+</script>
+{% endblock %}
