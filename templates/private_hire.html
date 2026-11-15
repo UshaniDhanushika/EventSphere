@@ -7,23 +7,23 @@
     <div class="row g-4">
         <!-- Request Form -->
         <div class="col-lg-6">
-            <div class="card border-0 shadow-sm rounded-4 p-4">
+            <div class="card border-0 custom-card rounded-4 p-4 shadow-sm">
                 <div class="d-flex align-items-center gap-2 mb-2">
-                    <span class="badge bg-primary-subtle text-primary p-2 rounded-3"><i class="bi bi-building"></i></span>
+                    <span class="brand-crest" style="width: 32px; height: 32px; font-size: 15px;"><i class="bi bi-buildings"></i></span>
                     <h4 class="fw-bold text-dark mb-0">Request Private Venue Hire</h4>
                 </div>
                 <p class="text-secondary small mb-4">
-                    Hire university halls for farewells, receptions, club celebrations, or conferences. Evaluated dynamically by <strong>VenueAgent</strong>.
+                    Reserve university auditoriums or conference rooms for farewells, receptions, club celebrations, or academic summits. Evaluated in real time by <strong>VenueAgent</strong>.
                 </p>
 
                 <form id="hireForm" onsubmit="submitHire(event)">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Select Venue</label>
+                        <label class="form-label small fw-semibold text-secondary">Select Campus Venue</label>
                         <select name="venue_id" id="hireVenue" class="form-select" required onchange="calcEstimatedPrice()">
-                            <option value="">-- Choose a campus venue --</option>
+                            <option value="">-- Choose a university venue --</option>
                             {% for v in venues %}
                             <option value="{{ v.id }}" data-rate="{{ v.hourly_rate }}" data-cap="{{ v.capacity }}">
-                                {{ v.name }} (Cap: {{ v.capacity }} • ${{ v.hourly_rate }}/hr)
+                                {{ v.name }} (Cap: {{ v.capacity }} &bull; ${{ v.hourly_rate }}/hr)
                             </option>
                             {% endfor %}
                         </select>
@@ -31,42 +31,42 @@
 
                     <div class="row g-2 mb-3">
                         <div class="col-sm-6">
-                            <label class="form-label small fw-semibold">Start Date & Time</label>
+                            <label class="form-label small fw-semibold text-secondary">Start Date &amp; Time</label>
                             <input type="datetime-local" name="start_time" id="hireStart" class="form-control form-control-sm" required onchange="calcEstimatedPrice()">
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label small fw-semibold">End Date & Time</label>
+                            <label class="form-label small fw-semibold text-secondary">End Date &amp; Time</label>
                             <input type="datetime-local" name="end_time" id="hireEnd" class="form-control form-control-sm" required onchange="calcEstimatedPrice()">
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Estimated Guest Count</label>
-                        <input type="number" name="guest_count" id="hireGuests" class="form-control form-control-sm" min="1" max="1000" placeholder="e.g. 50" required>
-                        <div class="form-text small">Routine limit: &le;100 guests and &le;8 hours (auto-approved). Larger hires are escalated to Admin.</div>
+                        <label class="form-label small fw-semibold text-secondary">Estimated Guest Count</label>
+                        <input type="number" name="guest_count" id="hireGuests" class="form-control form-control-sm" min="1" max="1000" placeholder="e.g. 60" required>
+                        <div class="form-text small" style="font-size: 0.75rem;">Routine limit: &le;100 guests and &le;8 hours (auto-approved). Larger hires are escalated to Admin.</div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Event Purpose / Occasion</label>
-                        <textarea name="purpose" id="hirePurpose" class="form-control form-control-sm" rows="2" placeholder="e.g. Faculty Farewell Ceremony or Robotics Club Annual Reception" required></textarea>
+                        <label class="form-label small fw-semibold text-secondary">Event Purpose / Occasion</label>
+                        <textarea name="purpose" id="hirePurpose" class="form-control form-control-sm" rows="2" placeholder="e.g. Faculty Farewell Dinner or Student Club Annual Reception" required></textarea>
                     </div>
 
-                    <div class="card p-3 bg-light border-0 rounded-3 mb-3 small">
+                    <div class="p-3 rounded-3 mb-3 small" style="background: #f5f3ff; border: 1px solid #ddd6fe;">
                         <div class="d-flex justify-content-between text-muted mb-1">
-                            <span>VenueAgent Rules:</span>
-                            <span>60-min turnaround buffer</span>
+                            <span>Turnaround Buffer:</span>
+                            <span class="fw-semibold text-dark">60-minute window</span>
                         </div>
                         <div class="d-flex justify-content-between text-muted mb-2">
                             <span>Weekend Peak Pricing:</span>
-                            <span>+25% on Sat/Sun</span>
+                            <span class="badge bg-warning-subtle text-dark border border-warning-subtle">+25% on Sat/Sun</span>
                         </div>
-                        <div class="d-flex justify-content-between fw-bold text-dark pt-2 border-top">
-                            <span>Estimated Hire Cost:</span>
-                            <span id="estimatedCost" class="text-primary fs-6">$0.00</span>
+                        <div class="d-flex justify-content-between fw-bold text-dark pt-2 border-top border-purple-200">
+                            <span>Estimated Hire Fee:</span>
+                            <span id="estimatedCost" class="fs-6" style="color: #6d28d9;">$0.00</span>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" id="btnSubmitHire">
+                    <button type="submit" class="btn btn-purple w-100 py-2 fw-bold shadow" id="btnSubmitHire">
                         <span id="btnHireText"><i class="bi bi-send me-1"></i> Submit to VenueAgent</span>
                         <span id="btnHireSpinner" class="spinner-border spinner-border-sm d-none"></span>
                     </button>
@@ -77,45 +77,45 @@
         <!-- VenueAgent Real-time Decision & My Past Hires -->
         <div class="col-lg-6">
             <!-- Dynamic Agent Decision Box -->
-            <div id="agentDecisionBox" class="card border-0 shadow-sm rounded-4 p-4 mb-4 d-none">
+            <div id="agentDecisionBox" class="card border-0 custom-card rounded-4 p-4 mb-4 shadow-sm d-none">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="badge" id="decisionBadge">AGREE</span>
-                    <span class="text-muted small">VenueAgent Decision</span>
+                    <span class="text-muted small fw-semibold">VenueAgent Decision</span>
                 </div>
-                <h5 class="fw-bold mb-2" id="decisionTitle">Decision Summary</h5>
+                <h5 class="fw-bold mb-2 text-dark" id="decisionTitle">Decision Summary</h5>
                 <p class="text-secondary small mb-3" id="decisionDetail"></p>
-                <div id="decisionAlternatives" class="d-none alert alert-warning small py-2 mb-0"></div>
+                <div id="decisionAlternatives" class="d-none alert alert-warning small py-2 mb-0 rounded-3"></div>
             </div>
 
             <!-- Existing Hire Requests History -->
-            <div class="card border-0 shadow-sm rounded-4 p-4">
-                <h5 class="fw-bold text-dark mb-3">My Venue Hire Requests</h5>
+            <div class="card border-0 custom-card rounded-4 p-4 shadow-sm">
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-purple-600 me-2"></i>My Venue Hire Requests</h5>
                 {% if my_hires %}
                 <div class="d-flex flex-column gap-2">
                     {% for h in my_hires %}
-                    <div class="border rounded-3 p-3 bg-light small">
+                    <div class="border rounded-3 p-3 small" style="background: #faf8ff; border-color: #ede9fe !important;">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <strong class="text-dark">{{ h.venue.name }}</strong>
-                            <span class="badge {% if h.status in ['confirmed', 'approved'] %}bg-success{% elif h.status == 'escalated' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            <span class="badge rounded-pill {% if h.status in ['confirmed', 'approved'] %}bg-success{% elif h.status == 'escalated' %}bg-warning text-dark{% else %}bg-danger{% endif %} px-2 py-1">
                                 {{ h.status|upper }}
                             </span>
                         </div>
                         <div class="text-muted mb-1">
-                            <i class="bi bi-calendar me-1"></i> {{ h.start_time.strftime('%b %d, %Y %I:%M %p') }} - {{ h.end_time.strftime('%I:%M %p') }}
+                            <i class="bi bi-calendar3 me-1 text-purple-600"></i> {{ h.start_time.strftime('%b %d, %Y %I:%M %p') }} - {{ h.end_time.strftime('%I:%M %p') }}
                         </div>
                         <div class="text-muted mb-1">
                             <strong>Purpose:</strong> {{ h.purpose }} ({{ h.guest_count }} guests)
                         </div>
-                        <div class="d-flex justify-content-between fw-semibold pt-1 border-top mt-2">
+                        <div class="d-flex justify-content-between fw-bold pt-1 border-top border-purple-200 mt-2">
                             <span>Total Price:</span>
-                            <span class="text-primary">${{ "%.2f"|format(h.total_price) }}</span>
+                            <span style="color: #6d28d9;">${{ "%.2f"|format(h.total_price) }}</span>
                         </div>
                     </div>
                     {% endfor %}
                 </div>
                 {% else %}
                 <div class="text-center py-4 text-muted small">
-                    <i class="bi bi-clock-history fs-2 d-block mb-2"></i>
+                    <i class="bi bi-calendar-x fs-2 text-purple-600 d-block mb-2"></i>
                     No previous venue hire requests submitted yet.
                 </div>
                 {% endif %}
@@ -149,7 +149,6 @@ function calcEstimatedPrice() {
     }
 
     let cost = diffHours * rate;
-    // Check weekend (Sat = 6, Sun = 0 in JS Date)
     const day = start.getDay();
     if (day === 0 || day === 6) {
         cost *= 1.25; // 25% weekend peak pricing
@@ -194,7 +193,7 @@ async function submitHire(e) {
         altBox.classList.add('d-none');
 
         if (!res.ok) {
-            badge.className = 'badge bg-danger';
+            badge.className = 'agent-performative perf-REFUSE';
             badge.innerText = 'REFUSE';
             title.innerText = 'Request Refused by VenueAgent';
             detail.innerText = data.detail || 'Request cannot be fulfilled.';
@@ -207,17 +206,17 @@ async function submitHire(e) {
             }
         } else {
             if (data.status === 'confirmed') {
-                badge.className = 'badge bg-success';
+                badge.className = 'agent-performative perf-AGREE';
                 badge.innerText = 'AGREE (AUTO-CONFIRMED)';
                 title.innerText = 'Routine Hire Confirmed Immediately!';
                 detail.innerText = `VenueAgent evaluated your request against calendar turnaround buffers and routine parameters. Total: $${data.total_price}.`;
             } else if (data.status === 'escalated') {
-                badge.className = 'badge bg-warning text-dark';
+                badge.className = 'agent-performative perf-PROPOSE';
                 badge.innerText = 'PROPOSE (ESCALATED)';
                 title.innerText = 'Escalated for Organiser Review';
                 detail.innerText = `VenueAgent detected non-routine guest size or duration. The request was automatically forwarded to the Admin dashboard for manual review. Price: $${data.total_price}.`;
             } else if (data.performative === 'PROPOSE') {
-                badge.className = 'badge bg-warning text-dark';
+                badge.className = 'agent-performative perf-PROPOSE';
                 badge.innerText = 'PROPOSE (COUNTER-OFFER)';
                 title.innerText = 'VenueAgent Counter-Proposal';
                 detail.innerText = data.reason || 'Usable alternatives offered.';

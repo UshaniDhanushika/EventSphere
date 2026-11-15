@@ -4,51 +4,60 @@
 
 {% block content %}
 <div class="container py-4">
-    <a href="/" class="btn btn-sm btn-link text-decoration-none text-secondary mb-3 ps-0">
-        <i class="bi bi-arrow-left me-1"></i> Back to Events
+    <a href="/" class="btn btn-sm btn-link text-decoration-none text-purple-700 mb-3 ps-0 fw-semibold">
+        <i class="bi bi-arrow-left me-1"></i> Back to Campus Events
     </a>
 
     <div class="row g-4">
         <!-- Event Details Column -->
         <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
-                <img src="{{ event.image_url or 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900' }}" 
-                     alt="{{ event.title }}" 
-                     class="w-100 object-fit-cover" 
-                     style="max-height: 320px;"
-                     onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900';">
+            <div class="card border-0 custom-card rounded-4 overflow-hidden mb-4 shadow-sm">
+                <div class="position-relative" style="height: 320px; background: #1e1136;">
+                    <img src="{{ event.image_url or 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900' }}" 
+                         alt="{{ event.title }}" 
+                         class="w-100 h-100 object-fit-cover" 
+                         onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900';">
+                    <span class="position-absolute top-0 end-0 m-3 badge rounded-pill px-3 py-2 shadow" style="background: rgba(30, 17, 54, 0.85); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.4);">
+                        {{ event.category }}
+                    </span>
+                </div>
                 
                 <div class="card-body p-4">
-                    <span class="badge bg-primary-subtle text-primary mb-2">{{ event.category }}</span>
-                    <h2 class="fw-bold text-dark mb-3">{{ event.title }}</h2>
-                    <p class="text-secondary">{{ event.description }}</p>
+                    <h2 class="fw-bold text-dark mb-3" style="letter-spacing: -0.5px;">{{ event.title }}</h2>
+                    <p class="text-secondary leading-relaxed">{{ event.description }}</p>
 
-                    <div class="row g-3 py-3 border-top border-bottom my-3">
+                    <div class="row g-3 py-3 border-top border-bottom my-3" style="border-color: #ede9fe !important;">
                         <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-calendar-check text-primary fs-4"></i>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 p-2 text-white" style="background: var(--gradient-royal); width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-calendar-event fs-5"></i>
+                                </div>
                                 <div>
-                                    <div class="small text-muted">Date & Time</div>
-                                    <div class="fw-semibold small">{{ event.start_time.strftime('%a, %d %b %Y') }}</div>
+                                    <div class="small text-muted fw-semibold">Date &amp; Time</div>
+                                    <div class="fw-bold small text-dark">{{ event.start_time.strftime('%a, %d %b %Y') }}</div>
                                     <div class="text-muted small">{{ event.start_time.strftime('%I:%M %p') }} - {{ event.end_time.strftime('%I:%M %p') }}</div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-sm-6">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="bi bi-geo-alt text-danger fs-4"></i>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 p-2 text-white bg-danger" style="width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-geo-alt-fill fs-5"></i>
+                                </div>
                                 <div>
-                                    <div class="small text-muted">Venue & Capacity</div>
-                                    <div class="fw-semibold small">{{ event.venue.name }}</div>
+                                    <div class="small text-muted fw-semibold">Venue &amp; Capacity</div>
+                                    <div class="fw-bold small text-dark">{{ event.venue.name }}</div>
                                     <div class="text-muted small">{{ event.venue.location }} (Max {{ event.venue.capacity }})</div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="alert alert-light border small text-muted">
-                        <i class="bi bi-info-circle me-1 text-primary"></i> 
-                        <strong>Autonomous Multi-Agent Policy:</strong> Booking limit is 6 tickets per transaction. Cancellations >24h prior qualify for a 100% simulated refund; 2-24h for 50%; &lt;2h no refund.
+                    <div class="alert p-3 rounded-3 small border-0 d-flex gap-2 align-items-start" style="background-color: #f5f3ff; color: #4c1d95;">
+                        <i class="bi bi-shield-lock-fill fs-5 text-purple-600 mt-n1"></i> 
+                        <div>
+                            <strong>Autonomous Multi-Agent Policy:</strong> Booking limit is 6 tickets per transaction. Cancellations &gt;24h prior qualify for a 100% simulated refund; 2-24h for 50%; &lt;2h no refund.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -56,16 +65,21 @@
 
         <!-- Ticket Selection & Booking Column -->
         <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 p-4 sticky-top" style="top: 80px;">
-                <h4 class="fw-bold mb-3">Select Tickets</h4>
+            <div class="card border-0 custom-card rounded-4 p-4 sticky-top shadow-sm" style="top: 80px;">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h4 class="fw-bold text-dark mb-0">Select Tickets</h4>
+                    <span class="badge rounded-pill bg-purple-100 text-purple-700 px-3 py-1 fw-bold" style="background: #ede9fe; color: #6d28d9;">
+                        Anti-Oversell Safe
+                    </span>
+                </div>
 
                 <form id="bookingForm" onsubmit="initiateBooking(event)">
                     <div class="mb-3">
-                        <label class="form-label small fw-semibold">Choose Category</label>
+                        <label class="form-label small fw-semibold text-secondary">Choose Ticket Category</label>
                         <div class="d-flex flex-column gap-2" id="categoryOptions">
                             {% for cat in event.ticket_categories %}
                             {% set left = cat.total_quantity - cat.sold_quantity %}
-                            <label class="card p-3 border rounded-3 cursor-pointer {% if left <= 0 %}bg-light opacity-50{% endif %}" style="cursor: pointer;">
+                            <label class="card p-3 border rounded-3 cursor-pointer {% if left <= 0 %}bg-light opacity-50{% endif %}" style="cursor: pointer; border-color: #ddd6fe !important;">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="form-check mb-0">
                                         <input class="form-check-input" type="radio" name="ticket_category_id" value="{{ cat.id }}" 
@@ -77,9 +91,9 @@
                                         </label>
                                     </div>
                                     <div class="text-end">
-                                        <span class="fw-bold text-primary">${{ "%.2f"|format(cat.price) }}</span>
-                                        <div class="small {% if left > 0 %}text-success{% else %}text-danger{% endif %}">
-                                            {{ left }} left
+                                        <span class="fw-bold text-purple-700 fs-6">${{ "%.2f"|format(cat.price) }}</span>
+                                        <div class="small {% if left > 0 %}text-success fw-semibold{% else %}text-danger fw-semibold{% endif %}" style="font-size: 0.75rem;">
+                                            {{ left }} remaining
                                         </div>
                                     </div>
                                 </div>
@@ -89,8 +103,8 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label small fw-semibold">Quantity (Max 6)</label>
-                        <select name="quantity" id="ticketQuantity" class="form-select form-select-sm" onchange="updateTotal()">
+                        <label class="form-label small fw-semibold text-secondary">Quantity (Max 6)</label>
+                        <select name="quantity" id="ticketQuantity" class="form-select" onchange="updateTotal()">
                             <option value="1">1 Ticket</option>
                             <option value="2">2 Tickets</option>
                             <option value="3">3 Tickets</option>
@@ -100,23 +114,23 @@
                         </select>
                     </div>
 
-                    <div class="bg-light p-3 rounded-3 mb-3">
+                    <div class="p-3 rounded-3 mb-4" style="background: #f5f3ff; border: 1px solid #ddd6fe;">
                         <div class="d-flex justify-content-between small text-muted mb-1">
-                            <span>Unit Price:</span>
-                            <span id="summaryUnitPrice">$0.00</span>
+                            <span>Ticket Price:</span>
+                            <span id="summaryUnitPrice" class="fw-semibold text-dark">$0.00</span>
                         </div>
                         <div class="d-flex justify-content-between small text-muted mb-2">
                             <span>Quantity:</span>
-                            <span id="summaryQuantity">1</span>
+                            <span id="summaryQuantity" class="fw-semibold text-dark">1</span>
                         </div>
-                        <div class="d-flex justify-content-between fw-bold text-dark fs-5 pt-2 border-top">
+                        <div class="d-flex justify-content-between fw-bold text-dark fs-5 pt-2 border-top border-purple-200">
                             <span>Total Due:</span>
-                            <span id="summaryTotalPrice" class="text-primary">$0.00</span>
+                            <span id="summaryTotalPrice" class="text-purple-700" style="color: #6d28d9;">$0.00</span>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
-                        <i class="bi bi-credit-card me-1"></i> Proceed to Simulated Payment
+                    <button type="submit" class="btn btn-purple w-100 py-3 fw-bold shadow">
+                        <i class="bi bi-credit-card-2-front me-1"></i> Proceed to Simulated Payment
                     </button>
                 </form>
             </div>
@@ -127,44 +141,44 @@
 <!-- Simulated Payment Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold">Simulated Sandbox Checkout</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header text-white" style="background: var(--gradient-royal);">
+                <h5 class="modal-title fw-bold"><i class="bi bi-shield-check me-1"></i> Simulated Sandbox Checkout</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <div class="alert alert-warning py-2 small mb-3">
-                    <i class="bi bi-shield-lock me-1"></i> <strong>Simulated Sandbox:</strong> No real bank card or financial data is collected or needed.
+            <div class="modal-body p-4">
+                <div class="alert alert-warning py-2 small mb-3 border-0 rounded-3">
+                    <i class="bi bi-info-circle me-1"></i> <strong>Simulation Mode:</strong> No real bank card or financial data is collected or needed.
                 </div>
                 
-                <div class="card p-3 bg-light border-0 mb-3 small">
+                <div class="card p-3 border rounded-3 mb-3 small" style="background: #faf8ff; border-color: #ddd6fe !important;">
                     <div class="d-flex justify-content-between mb-1">
-                        <span>Event:</span>
-                        <strong class="text-truncate" style="max-width: 200px;">{{ event.title }}</strong>
+                        <span class="text-muted">Event:</span>
+                        <strong class="text-truncate text-dark" style="max-width: 220px;">{{ event.title }}</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
-                        <span>Category:</span>
-                        <strong id="modalCatName">Standard</strong>
+                        <span class="text-muted">Category:</span>
+                        <strong id="modalCatName" class="text-dark">Standard</strong>
                     </div>
                     <div class="d-flex justify-content-between mb-1">
-                        <span>Quantity:</span>
-                        <strong id="modalQty">1</strong>
+                        <span class="text-muted">Quantity:</span>
+                        <strong id="modalQty" class="text-dark">1</strong>
                     </div>
-                    <div class="d-flex justify-content-between fw-bold text-dark pt-2 border-top">
-                        <span>Amount to Authorize:</span>
-                        <strong class="text-primary fs-6" id="modalTotal">$0.00</strong>
+                    <div class="d-flex justify-content-between fw-bold text-dark pt-2 border-top border-purple-200">
+                        <span>Simulated Amount:</span>
+                        <strong class="fs-5" style="color: #6d28d9;" id="modalTotal">$0.00</strong>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold">Simulated Card Reference</label>
-                    <input type="text" class="form-control form-control-sm" value="•••• •••• •••• 4242 (TEST-SIMULATION)" readonly>
+                    <label class="form-label small fw-semibold text-secondary">Simulated Payment Reference</label>
+                    <input type="text" class="form-control form-control-sm bg-light" value="•••• •••• •••• 4242 (TEST-SIMULATION)" readonly>
                 </div>
 
-                <div id="bookingError" class="alert alert-danger py-2 small d-none"></div>
+                <div id="bookingError" class="alert alert-danger py-2 small d-none rounded-3"></div>
 
-                <button type="button" class="btn btn-success w-100 py-2 fw-semibold" id="btnConfirmPay" onclick="confirmPayment()">
-                    <span id="btnPayText"><i class="bi bi-check2-circle me-1"></i> Confirm & Authorize Booking</span>
+                <button type="button" class="btn btn-purple w-100 py-2 fw-bold" id="btnConfirmPay" onclick="confirmPayment()">
+                    <span id="btnPayText"><i class="bi bi-check2-circle me-1"></i> Confirm &amp; Authorize Booking</span>
                     <span id="btnPaySpinner" class="spinner-border spinner-border-sm d-none"></span>
                 </button>
             </div>
@@ -236,7 +250,7 @@ async function confirmPayment() {
             throw new Error(data.detail || 'Booking request rejected by BookingAgent.');
         }
 
-        // Successful booking! Redirect to user's tickets
+        // Redirect to user's tickets
         window.location.href = '/my-tickets?success=' + encodeURIComponent(data.booking_reference);
     } catch (err) {
         errBox.innerText = err.message;

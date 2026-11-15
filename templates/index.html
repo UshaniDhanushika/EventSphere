@@ -3,51 +3,55 @@
 {% block title %}EventSphere - University Events & Space Booking{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="py-4 py-md-5 bg-white border-bottom">
-    <div class="container">
+<!-- Royal Purple University Hero Banner -->
+<section class="py-5" style="background: linear-gradient(135deg, #1e1136 0%, #2e1065 40%, #4338ca 100%); color: white;">
+    <div class="container py-2">
         <div class="row align-items-center g-4">
             <div class="col-lg-7">
-                <span class="badge bg-indigo-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold small mb-3">
-                    <i class="bi bi-robot me-1"></i> Autonomous Cooperative Agents Active
+                <span class="badge px-3 py-2 rounded-pill fw-bold small mb-3 shadow-sm" style="background: rgba(139, 92, 246, 0.25); border: 1px solid rgba(196, 181, 253, 0.4); color: #e9d5ff;">
+                    <i class="bi bi-cpu-fill text-warning me-1"></i> Autonomous Cooperative Agents Active
                 </span>
-                <h1 class="display-6 fw-bold text-dark lh-sm mb-3">
-                    Campus Venue Booking & <br><span class="text-primary">Digital Ticketing Platform</span>
+                <h1 class="display-5 fw-extrabold text-white lh-sm mb-3" style="font-weight: 800; letter-spacing: -1px;">
+                    University Events &amp; <br><span style="background: linear-gradient(90deg, #c4b5fd 0%, #93c5fd 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Venue Reservation Portal</span>
                 </h1>
-                <p class="lead text-secondary mb-4 fs-6">
-                    Book university concerts, academic seminars, sports games and private venues. Every slot reservation and ticket issuance is decided dynamically by cooperating software agents.
+                <p class="lead text-white-50 mb-4 fs-6" style="max-width: 580px;">
+                    Explore academic conferences, workshops, sports finals, cultural nights, and reserve university spaces for private hire. Every seat allocation and turnaround buffer is managed dynamically by software agents.
                 </p>
                 <div class="d-flex flex-wrap gap-2">
-                    <a href="#browse-events" class="btn btn-primary btn-lg fs-6">
-                        <i class="bi bi-search me-1"></i> Explore Events
+                    <a href="#browse-events" class="btn btn-purple btn-lg fs-6 shadow">
+                        <i class="bi bi-compass me-1"></i> Browse Campus Events
                     </a>
-                    <a href="/hire" class="btn btn-outline-secondary btn-lg fs-6">
-                        <i class="bi bi-building me-1"></i> Request Venue Hire
+                    <a href="/hire" class="btn btn-outline-light btn-lg fs-6" style="border-radius: 10px; font-weight: 600;">
+                        <i class="bi bi-buildings me-1"></i> Request Venue Hire
                     </a>
                 </div>
             </div>
+            
             <div class="col-lg-5 d-none d-lg-block">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-light p-3">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <span class="badge bg-success rounded-circle p-1"><i class="bi bi-check text-white"></i></span>
-                        <span class="small fw-bold">Live Multi-Agent Status</span>
+                <div class="card border-0 rounded-4 overflow-hidden shadow-lg p-3" style="background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.15) !important;">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2" style="border-color: rgba(255, 255, 255, 0.1) !important;">
+                        <span class="small fw-bold text-white d-flex align-items-center gap-2">
+                            <span class="spinner-grow spinner-grow-sm text-success" style="width: 8px; height: 8px;"></span>
+                            Agent Multi-Tasking Health
+                        </span>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle" style="font-size: 0.7rem;">ALL AGENTS READY</span>
                     </div>
-                    <ul class="list-unstyled small mb-0">
-                        <li class="py-1 border-bottom d-flex justify-content-between">
-                            <span><i class="bi bi-shield-check text-primary me-2"></i>VenueAgent:</span>
-                            <span class="badge bg-success-subtle text-success">Buffer & Clashes Protected</span>
+                    <ul class="list-unstyled small mb-0 text-white-50">
+                        <li class="py-2 border-bottom d-flex justify-content-between align-items-center" style="border-color: rgba(255, 255, 255, 0.08) !important;">
+                            <span><i class="bi bi-shield-check text-info me-2"></i>VenueAgent:</span>
+                            <span class="badge" style="background: rgba(56, 189, 248, 0.2); color: #7dd3fc;">60-Min Buffer Active</span>
                         </li>
-                        <li class="py-1 border-bottom d-flex justify-content-between">
-                            <span><i class="bi bi-ticket-perforated text-info me-2"></i>BookingAgent:</span>
-                            <span class="badge bg-info-subtle text-info">Anti-Oversell Active (Max 6)</span>
+                        <li class="py-2 border-bottom d-flex justify-content-between align-items-center" style="border-color: rgba(255, 255, 255, 0.08) !important;">
+                            <span><i class="bi bi-ticket-perforated text-warning me-2"></i>BookingAgent:</span>
+                            <span class="badge" style="background: rgba(251, 191, 36, 0.2); color: #fde68a;">Anti-Oversell (Max 6)</span>
                         </li>
-                        <li class="py-1 border-bottom d-flex justify-content-between">
-                            <span><i class="bi bi-qr-code text-warning me-2"></i>TicketAgent:</span>
-                            <span class="badge bg-warning-subtle text-warning">Strict Single-Admit & QR</span>
+                        <li class="py-2 border-bottom d-flex justify-content-between align-items-center" style="border-color: rgba(255, 255, 255, 0.08) !important;">
+                            <span><i class="bi bi-qr-code-scan text-primary me-2"></i>TicketAgent:</span>
+                            <span class="badge" style="background: rgba(167, 139, 250, 0.2); color: #c4b5fd;">Single-Admit & QR</span>
                         </li>
-                        <li class="py-1 d-flex justify-content-between">
+                        <li class="py-2 d-flex justify-content-between align-items-center">
                             <span><i class="bi bi-hourglass-split text-danger me-2"></i>WaitlistAgent:</span>
-                            <span class="badge bg-danger-subtle text-danger">Auto-Sweep Active</span>
+                            <span class="badge" style="background: rgba(248, 113, 113, 0.2); color: #fca5a5;">15s Proactive Sweep</span>
                         </li>
                     </ul>
                 </div>
@@ -57,15 +61,15 @@
 </section>
 
 <!-- Events Section -->
-<section class="py-4" id="browse-events">
+<section class="py-5" id="browse-events">
     <div class="container">
         <!-- Search and Filter Bar -->
-        <div class="card border-0 shadow-sm rounded-3 p-3 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 p-3 mb-4 bg-white" style="border: 1px solid rgba(124, 58, 237, 0.12) !important;">
             <form method="GET" action="/" class="row g-2 align-items-center">
                 <div class="col-md-5">
                     <div class="input-group">
-                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
-                        <input type="text" name="search" value="{{ search_query }}" class="form-control border-start-0 ps-0" placeholder="Search events by title or venue...">
+                        <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="bi bi-search text-purple-600"></i></span>
+                        <input type="text" name="search" value="{{ search_query }}" class="form-control border-start-0 ps-0" placeholder="Search events by title or keywords...">
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
@@ -79,58 +83,70 @@
                     </select>
                 </div>
                 <div class="col-6 col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">
-                        Filter
+                    <button type="submit" class="btn btn-purple w-100">
+                        <i class="bi bi-filter me-1"></i> Filter
                     </button>
                 </div>
                 {% if search_query or selected_category %}
                 <div class="col-12 col-md-2 text-md-end">
-                    <a href="/" class="btn btn-link btn-sm text-secondary text-decoration-none">Clear filters</a>
+                    <a href="/" class="btn btn-link btn-sm text-secondary text-decoration-none">Clear filter</a>
                 </div>
                 {% endif %}
             </form>
         </div>
 
         <!-- Event Cards Grid -->
-        <div class="row g-3">
+        <div class="row g-4">
             {% for event in events %}
             <div class="col-12 col-md-6 col-lg-4">
-                <div class="card h-100 border-0 shadow-sm rounded-3 overflow-hidden d-flex flex-column">
-                    <div class="position-relative" style="height: 180px; background-color: #e2e8f0;">
+                <div class="card h-100 border-0 custom-card overflow-hidden d-flex flex-column">
+                    <div class="position-relative" style="height: 190px; background-color: #1e1136;">
                         <img src="{{ event.image_url or 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600' }}" 
                              alt="{{ event.title }}" 
                              class="w-100 h-100 object-fit-cover"
                              onerror="this.src='https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600';">
-                        <span class="position-absolute top-0 end-0 m-2 badge bg-dark bg-opacity-75 rounded-pill px-2 py-1">
+                        
+                        <!-- Category Badge -->
+                        <span class="position-absolute top-0 end-0 m-2 badge rounded-pill px-3 py-1 shadow-sm" style="background: rgba(30, 17, 54, 0.85); backdrop-filter: blur(6px); color: #ddd6fe; border: 1px solid rgba(139, 92, 246, 0.3);">
                             {{ event.category }}
+                        </span>
+
+                        <!-- Date Badge -->
+                        <span class="position-absolute bottom-0 start-0 m-2 badge rounded-3 px-2 py-1 shadow-sm" style="background: rgba(255, 255, 255, 0.95); color: #31104b; font-weight: 700;">
+                            <i class="bi bi-calendar3 me-1 text-primary"></i> {{ event.start_time.strftime('%b %d, %Y') }}
                         </span>
                     </div>
 
-                    <div class="card-body p-3 d-flex flex-column">
+                    <div class="card-body p-4 d-flex flex-column">
                         <div class="small text-muted mb-1 d-flex align-items-center gap-1">
-                            <i class="bi bi-clock"></i>
-                            <span>{{ event.start_time.strftime('%b %d, %Y • %I:%M %p') }}</span>
+                            <i class="bi bi-clock-history text-purple-600"></i>
+                            <span>{{ event.start_time.strftime('%I:%M %p') }} - {{ event.end_time.strftime('%I:%M %p') }}</span>
                         </div>
-                        <h5 class="card-title fw-bold text-dark mb-2 fs-6">
+                        
+                        <h5 class="card-title fw-bold text-dark mb-2 fs-6" style="line-height: 1.35;">
                             {{ event.title }}
                         </h5>
-                        <p class="card-text text-secondary small flex-grow-1 line-clamp-2">
-                            {{ event.description[:120] }}...
+                        
+                        <p class="card-text text-secondary small flex-grow-1 line-clamp-2 mb-3">
+                            {{ event.description[:110] }}...
                         </p>
 
-                        <div class="bg-light p-2 rounded-2 mb-3 small">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="text-muted"><i class="bi bi-geo-alt me-1"></i>{{ event.venue.name }}</span>
-                                <span class="badge bg-secondary-subtle text-secondary">Cap: {{ event.venue.capacity }}</span>
+                        <!-- Venue Pill -->
+                        <div class="p-2 rounded-3 mb-3 small" style="background-color: #f5f3ff; border: 1px solid #ede9fe;">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-semibold text-dark text-truncate" style="max-width: 170px;">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ event.venue.name }}
+                                </span>
+                                <span class="badge rounded-pill bg-white text-secondary border">Cap: {{ event.venue.capacity }}</span>
                             </div>
+
                             <!-- Ticket Categories & Availability -->
-                            <div class="mt-2 pt-2 border-top">
-                                <div class="fw-semibold small text-dark mb-1">Tickets Left:</div>
+                            <div class="pt-2 border-top border-purple-200 mt-1">
                                 <div class="d-flex flex-wrap gap-1">
                                     {% for cat in event.ticket_categories %}
                                     {% set left = cat.total_quantity - cat.sold_quantity %}
-                                    <span class="badge {% if left > 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} border">
-                                        {{ cat.name }}: ${{ cat.price }} ({{ left if left > 0 else 'Sold Out' }})
+                                    <span class="badge {% if left > 0 %}bg-white text-success border-success-subtle{% else %}bg-danger-subtle text-danger border-danger-subtle{% endif %} border px-2 py-1" style="font-size: 0.72rem;">
+                                        {{ cat.name }}: <strong>${{ "%.2f"|format(cat.price) }}</strong> ({{ left if left > 0 else 'Sold Out' }})
                                     </span>
                                     {% endfor %}
                                 </div>
@@ -145,12 +161,12 @@
                             {% endfor %}
 
                             {% if total_left.value > 0 %}
-                            <a href="/event/{{ event.id }}" class="btn btn-primary w-100 btn-sm fw-semibold">
-                                Book Tickets
+                            <a href="/event/{{ event.id }}" class="btn btn-purple w-100 py-2 btn-sm fw-semibold">
+                                <i class="bi bi-ticket-perforated me-1"></i> Book Tickets
                             </a>
                             {% else %}
-                            <button type="button" class="btn btn-outline-danger w-100 btn-sm fw-semibold" onclick="openWaitlistModal({{ event.id }}, '{{ event.title }}')">
-                                <i class="bi bi-bell me-1"></i> Sold Out - Join Waitlist
+                            <button type="button" class="btn btn-outline-danger w-100 py-2 btn-sm fw-semibold" onclick="openWaitlistModal({{ event.id }}, '{{ event.title }}')">
+                                <i class="bi bi-bell-fill me-1"></i> Sold Out &bull; Join Waitlist
                             </button>
                             {% endif %}
                         </div>
@@ -159,10 +175,14 @@
             </div>
             {% else %}
             <div class="col-12 text-center py-5">
-                <i class="bi bi-calendar-x fs-1 text-muted mb-3 d-block"></i>
-                <h5 class="fw-bold">No events found</h5>
-                <p class="text-muted small">Try adjusting your search criteria or category filter.</p>
-                <a href="/" class="btn btn-outline-primary btn-sm">Reset Filters</a>
+                <div class="card p-5 border-0 rounded-4 custom-card text-center">
+                    <i class="bi bi-calendar-x fs-1 text-purple-600 mb-3 d-block"></i>
+                    <h5 class="fw-bold text-dark">No campus events found</h5>
+                    <p class="text-secondary small">Try adjusting your search criteria or category filter.</p>
+                    <div>
+                        <a href="/" class="btn btn-outline-purple btn-sm">Reset Filters</a>
+                    </div>
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -172,14 +192,14 @@
 <!-- Join Waitlist Modal -->
 <div class="modal fade" id="waitlistModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold" id="waitlistModalLabel">Join Waitlist</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header text-white" style="background: var(--gradient-royal);">
+                <h5 class="modal-title fw-bold" id="waitlistModalLabel"><i class="bi bi-hourglass-split me-1"></i> Join Event Waitlist</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <p class="text-secondary small mb-3">
-                    WaitlistAgent will automatically hold a released seat and notify you with a 10-minute claim countdown whenever an attendee cancels.
+                    <strong>WaitlistAgent</strong> will automatically hold a released seat and notify you with a 10-minute claim countdown whenever an attendee cancels their booking.
                 </p>
                 <form id="waitlistForm" onsubmit="submitWaitlist(event)">
                     <input type="hidden" id="waitlistEventId" name="event_id">
@@ -188,9 +208,9 @@
                         <input type="text" id="waitlistEventTitle" class="form-control form-control-sm bg-light" readonly>
                     </div>
                     <div class="alert alert-info py-2 small mb-3">
-                        <i class="bi bi-info-circle me-1"></i> Max 1 waitlist request per user.
+                        <i class="bi bi-info-circle me-1"></i> Max 1 waitlist hold per user.
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 btn-sm">Confirm Join Waitlist</button>
+                    <button type="submit" class="btn btn-purple w-100 py-2 fw-semibold">Confirm Waitlist Placement</button>
                 </form>
             </div>
         </div>
