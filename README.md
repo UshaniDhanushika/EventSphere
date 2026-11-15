@@ -88,7 +88,7 @@ pytest tests/ -v
 python -m pytest tests/test_eventsphere.py -v
 ```
 
-All 11 tests pass with 100% verification:
+The suite contains 14 tests:
 - `test_venue_agent_turnaround_buffer_clash` (Buffer clash & PROPOSE alternatives)
 - `test_venue_agent_weekend_pricing` (Weekend 1.25x peak pricing)
 - `test_booking_agent_refuses_over_six_tickets` (Max 6 tickets limit rule)
@@ -100,22 +100,40 @@ All 11 tests pass with 100% verification:
 - `test_notification_agent_listener` (Reactive broadcast event listening)
 - `test_role_based_access_control` (403/302 protection on staff & admin routes)
 - `test_agent_http_inbox` (Agent HTTP JSON messaging endpoint)
+- `test_venue_edit_and_draft_publishing` (Venue editing & draft-to-publish workflow)
+- `test_waitlist_claim_and_csrf_validation` (Waitlist seat claim & CSRF token protection)
+- `test_role_registration_and_login_redirection` (Role registration and role-based redirect after login)
 
 ---
 
-## ☁️ Deployment Instructions (Render)
+## ☁️ Deployment (Railway + PostgreSQL)
 
-1. Push your repository to **GitHub**.
-2. Log in to [Render](https://render.com) and click **New Web Service**.
-3. Connect your GitHub repository.
-4. Set:
-   - **Environment**: `Python 3`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. (Optional) Under **Environment Variables**, set:
-   - `SECRET_KEY`: `<your-random-secret-key>`
-   - `DATABASE_URL`: `sqlite:///./eventsphere.db` (or connect a Render PostgreSQL instance)
-6. Click **Deploy**. Render will generate a public HTTPS address!
+The repository is ready for [Railway](https://railway.com): `railway.json` sets the start command and health check, `.python-version` pins Python 3.12, and `Procfile` is kept as a fallback.
+
+1. Push the repository to **GitHub** (the `.gitignore` keeps `.env`, `*.db` and caches out of Git).
+2. In Railway, click **New Project → Deploy from GitHub repo** and pick the repository.
+3. In the same project, click **+ New → Database → PostgreSQL**.
+4. Open the web service → **Variables** and add:
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (reference variable to the Postgres service)
+   - `SECRET_KEY` = a long random string (for example the output of `python -c "import secrets; print(secrets.token_hex(32))"`)
+5. Open **Settings → Networking → Generate Domain**. Railway gives a public HTTPS address such as `https://eventsphere-production.up.railway.app`.
+6. On first start the app creates all tables in PostgreSQL and seeds the demo accounts, venues and events. The WaitlistAgent sweep starts automatically.
+
+Start command used by Railway:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips=*
+```
+
+`--proxy-headers` makes redirects use `https://` behind Railway's proxy. Run a single instance (one replica), because the WaitlistAgent sweep runs inside the web process.
+
+### Environment variables
+
+| Variable | Purpose | Local default |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | SQLAlchemy database URL (PostgreSQL in production) | `sqlite:///./eventsphere.db` |
+| `SECRET_KEY` | Signs JWT session tokens; never commit the real value | development key in `security.py` |
+| `PORT` | Port to listen on (Railway sets this) | `8000` |
 
 ---
 
@@ -132,7 +150,8 @@ EventSphere/
 ├── seed_data.py                # Automated database seeding (demo accounts, sample venues/events)
 ├── run.py                      # Application launcher script
 ├── requirements.txt            # Python dependencies
-├── Procfile                    # Render cloud deployment configuration
+├── railway.json                # Railway build/deploy configuration
+├── Procfile                    # Fallback start command
 │
 ├── templates/                  # Mobile-responsive HTML templates (Bootstrap 5, 375px+)
 │   ├── base.html               # Shared layout, navbar, mobile viewport
@@ -147,5 +166,5 @@ EventSphere/
 │   └── register.html           # Attendee self-registration
 │
 └── tests/                      # Automated Pytest suite
-    └── test_eventsphere.py     # 11 tests covering all agents, overbooking, and check-in
+    └── test_eventsphere.py     # 14 tests covering all agents, overbooking, and check-in
 ```

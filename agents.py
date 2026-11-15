@@ -4,9 +4,11 @@ import secrets
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
 
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import (
+    utcnow,
     AgentMessage as AgentMessageModel,
     AgentBelief,
     Venue,
@@ -39,7 +41,7 @@ class AgentMessage:
         self.receiver = receiver
         self.performative = performative.upper()
         self.content = content
-        self.timestamp = timestamp or datetime.utcnow()
+        self.timestamp = timestamp or utcnow()
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -151,7 +153,7 @@ class BaseAgent:
                 db.add(belief)
             else:
                 belief.belief_value = json.dumps(value)
-                belief.updated_at = datetime.utcnow()
+                belief.updated_at = utcnow()
             db.commit()
         finally:
             db.close()
@@ -410,7 +412,7 @@ class VenueAgent(BaseAgent):
                         "event_type": "hire_confirmed",
                         "user_id": user_id,
                         "hire_id": hire.id,
-                        "message": f"Private hire for '{venue.name}' automatically confirmed! Total: ${price}."
+                        "message": f"Private hire for '{venue.name}' automatically confirmed! Total: Rs. {price:.2f}."
                     },
                     conversation_id=message.conversation_id
                 ))
@@ -525,8 +527,32 @@ class BookingAgent(BaseAgent):
                     conversation_id=message.conversation_id
                 )
 
-            # Reserve seats atomically
-            cat.sold_quantity += quantity
+            # Reserve seats atomically (Rule B2): a single conditional UPDATE that only
+            # succeeds if enough seats remain. The database applies it row-by-row, so when two
+            # requests race for the last seat only one UPDATE matches; the other gets rowcount 0.
+            result = db.execute(
+                update(TicketCategory)
+                .where(
+                    TicketCategory.id == category_id,
+                    TicketCategory.sold_quantity + quantity <= TicketCategory.total_quantity
+                )
+                .values(sold_quantity=TicketCategory.sold_quantity + quantity)
+                .execution_options(synchronize_session=False)
+            )
+            if result.rowcount != 1:
+                db.rollback()
+                db.refresh(cat)
+                left = max(0, cat.total_quantity - cat.sold_quantity)
+                return AgentMessage(
+                    sender=self.name,
+                    receiver=message.sender,
+                    performative="REFUSE",
+                    content={
+                        "reason": f"Sold out or insufficient tickets available (Requested: {quantity}, Left: {left}).",
+                        "available": left
+                    },
+                    conversation_id=message.conversation_id
+                )
             total_price = round(quantity * cat.price, 2)
             payment_ref = f"SIM-PAY-{secrets.token_hex(4).upper()}"
             booking_ref = f"BK-{secrets.token_hex(4).upper()}"
@@ -619,7 +645,7 @@ class BookingAgent(BaseAgent):
                 )
 
             event = booking.event
-            now = datetime.utcnow()
+            now = utcnow()
             hours_until_event = (event.start_time - now).total_seconds() / 3600.0
 
             # Stated refund policy:
@@ -672,7 +698,7 @@ class BookingAgent(BaseAgent):
                     content={
                         "event_type": "booking_cancelled",
                         "user_id": user_id,
-                        "message": f"Booking {booking.booking_reference} cancelled. Refund: ${refund_amount} ({policy_note})."
+                        "message": f"Booking {booking.booking_reference} cancelled. Refund: Rs. {refund_amount:.2f} ({policy_note})."
                     },
                     conversation_id=message.conversation_id
                 ))
@@ -716,7 +742,7 @@ class BookingAgent(BaseAgent):
                         content={
                             "event_type": "event_cancelled_full_refund",
                             "user_id": b.user_id,
-                            "message": f"Event was cancelled by organiser. Full refund of ${b.total_price} credited."
+                            "message": f"Event was cancelled by organiser. Full refund of Rs. {b.total_price:.2f} credited."
                         },
                         conversation_id=message.conversation_id
                     ))
@@ -855,9 +881,9 @@ class TicketAgent(BaseAgent):
                     conversation_id=message.conversation_id
                 )
 
-            # Check-in time window check (allowed from 2 hours before event up to event end)
+            # Check-in time window (Rule T4): doors open 3 hours before start and close at event end
             event = ticket.event
-            now = datetime.utcnow()
+            now = utcnow()
             if now < (event.start_time - timedelta(hours=3)):
                 return AgentMessage(
                     sender=self.name,
@@ -867,9 +893,18 @@ class TicketAgent(BaseAgent):
                     conversation_id=message.conversation_id
                 )
 
+            if now > event.end_time:
+                return AgentMessage(
+                    sender=self.name,
+                    receiver=message.sender,
+                    performative="REFUSE",
+                    content={"reason": "Check-in closed. This event has already ended.", "status": "outside_checkin_window"},
+                    conversation_id=message.conversation_id
+                )
+
             # Mark admitted
             ticket.status = "admitted"
-            ticket.admitted_at = datetime.utcnow()
+            ticket.admitted_at = utcnow()
             db.commit()
 
             return AgentMessage(
@@ -979,7 +1014,7 @@ class WaitlistAgent(BaseAgent):
                 )
 
             # Offer seat with timed hold (10 min)
-            now = datetime.utcnow()
+            now = utcnow()
             expires = now + timedelta(minutes=self.hold_duration_minutes)
             next_waiting.status = "offered"
             next_waiting.offered_at = now
@@ -1018,7 +1053,7 @@ class WaitlistAgent(BaseAgent):
         """Proactive behaviour: Scheduled periodic sweep that expires unclaimed holds and re-offers them."""
         db = SessionLocal()
         try:
-            now = datetime.utcnow()
+            now = utcnow()
             expired_holds = db.query(WaitlistEntry).filter(
                 WaitlistEntry.status == "offered",
                 WaitlistEntry.expires_at < now
