@@ -18,6 +18,10 @@
         {% endif %}
 
         <form method="POST" action="/login">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            {% if next_url %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+            {% endif %}
             <div class="mb-3">
                 <label class="form-label small fw-semibold text-secondary">Username / University Email</label>
                 <div class="input-group">

@@ -242,7 +242,7 @@ def render_template(template_name: str, request: Request, context: dict, status_
     context["request"] = request
     resp = templates.TemplateResponse(request=request, name=template_name, context=context, status_code=status_code)
     if not request.cookies.get("csrf_token"):
-        resp.set_cookie(key="csrf_token", value=csrf_token, httponly=False, samesite="lax")
+        resp.set_cookie(key="csrf_token", value=csrf_token, httponly=False, samesite="lax", path="/")
     return resp
 
 
