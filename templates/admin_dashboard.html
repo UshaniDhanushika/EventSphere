@@ -366,10 +366,14 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4 small">
+                <!-- Inline Alerts -->
+                <div id="eventModalAlert" class="alert alert-danger d-none py-2 px-3 small rounded-3 mb-3"></div>
+                <div id="eventModalSuccess" class="alert alert-success d-none py-2 px-3 small rounded-3 mb-3"></div>
+
                 <div class="row g-2 mb-2">
                     <div class="col-md-8">
                         <label class="form-label fw-semibold">Event Title</label>
-                        <input type="text" id="eTitle" class="form-control form-control-sm" required>
+                        <input type="text" id="eTitle" class="form-control form-control-sm" placeholder="e.g. Annual Tech Symposium 2026" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold">Category</label>
@@ -384,12 +388,14 @@
                 </div>
                 <div class="mb-2">
                     <label class="form-label fw-semibold">Venue</label>
-                    <select id="eVenue" class="form-select form-select-sm" required>
+                    <select id="eVenue" class="form-select form-select-sm" onchange="syncVenueCapacity()" required>
                         {% for v in venues %}
-                        <option value="{{ v.id }}">{{ v.name }} (Max Cap: {{ v.capacity }})</option>
+                        <option value="{{ v.id }}" data-capacity="{{ v.capacity }}" {% if loop.first %}selected{% endif %}>{{ v.name }} (Max Cap: {{ v.capacity }})</option>
                         {% endfor %}
                     </select>
-                    <div class="form-text" style="font-size: 0.72rem;">VenueAgent will check for scheduling clashes and the 1-hour turnaround buffer before agreeing.</div>
+                    <div id="venueCapNotice" class="form-text text-purple-700 fw-semibold" style="font-size: 0.75rem;">
+                        VenueAgent will check for scheduling clashes and the 1-hour turnaround buffer before agreeing.
+                    </div>
                 </div>
                 <div class="row g-2 mb-2">
                     <div class="col-sm-6">
@@ -403,7 +409,7 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Description</label>
-                    <textarea id="eDesc" class="form-control form-control-sm" rows="2"></textarea>
+                    <textarea id="eDesc" class="form-control form-control-sm" rows="2" placeholder="Brief overview of the campus event..."></textarea>
                 </div>
 
                 <h6 class="fw-bold border-top border-purple-200 pt-2 text-purple-700">Ticket Categories (At least 1)</h6>
@@ -418,12 +424,14 @@
                     </div>
                     <div class="col-4">
                         <label class="form-label">Quantity</label>
-                        <input type="number" id="tQty" class="form-control form-control-sm" value="100" min="1" required>
+                        <input type="number" id="tQty" class="form-control form-control-sm" value="50" min="1" required>
                     </div>
                 </div>
             </div>
             <div class="modal-footer border-0">
-                <button type="submit" class="btn btn-purple btn-sm px-4">Submit to VenueAgent &amp; Publish</button>
+                <button type="submit" id="btnPublishEvent" class="btn btn-purple btn-sm px-4">
+                    <i class="bi bi-calendar-plus me-1"></i> Submit to VenueAgent &amp; Publish
+                </button>
             </div>
         </form>
     </div>
@@ -469,8 +477,56 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             options: { responsive: true, maintainAspectRatio: false }
         });
+    // Initialize venue capacity sync and default dates when modal is opened
+    const newEventModal = document.getElementById('newEventModal');
+    if (newEventModal) {
+        newEventModal.addEventListener('show.bs.modal', () => {
+            syncVenueCapacity();
+            const alertBox = document.getElementById('eventModalAlert');
+            const successBox = document.getElementById('eventModalSuccess');
+            if (alertBox) { alertBox.classList.add('d-none'); alertBox.textContent = ''; }
+            if (successBox) { successBox.classList.add('d-none'); successBox.textContent = ''; }
+
+            // Pre-populate start and end times if empty (tomorrow 10:00 to 14:00)
+            const eStart = document.getElementById('eStart');
+            const eEnd = document.getElementById('eEnd');
+            if (eStart && !eStart.value) {
+                const now = new Date();
+                const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 10, 0);
+                const tomorrowEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 14, 0);
+                eStart.value = formatDateTimeLocal(tomorrow);
+                if (eEnd && !eEnd.value) {
+                    eEnd.value = formatDateTimeLocal(tomorrowEnd);
+                }
+            }
+        });
     }
 });
+
+function formatDateTimeLocal(d) {
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function syncVenueCapacity() {
+    const sel = document.getElementById('eVenue');
+    if (!sel) return;
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt) return;
+    const cap = parseInt(opt.getAttribute('data-capacity') || '500');
+    const qtyInput = document.getElementById('tQty');
+    const notice = document.getElementById('venueCapNotice');
+
+    if (qtyInput) {
+        qtyInput.max = cap;
+        if (parseInt(qtyInput.value || 0) > cap) {
+            qtyInput.value = cap;
+        }
+    }
+    if (notice) {
+        notice.textContent = `Selected venue capacity: ${cap} seats. Ticket quantity cannot exceed this.`;
+    }
+}
 
 async function createVenue(e) {
     e.preventDefault();
@@ -497,30 +553,97 @@ async function createVenue(e) {
 
 async function createEvent(e) {
     e.preventDefault();
+    const alertBox = document.getElementById('eventModalAlert');
+    const successBox = document.getElementById('eventModalSuccess');
+    const btnSubmit = document.getElementById('btnPublishEvent');
+
+    if (alertBox) { alertBox.classList.add('d-none'); alertBox.textContent = ''; }
+    if (successBox) { successBox.classList.add('d-none'); successBox.textContent = ''; }
+
+    const sVal = document.getElementById('eStart').value;
+    const eVal = document.getElementById('eEnd').value;
+
+    if (!sVal || !eVal) {
+        if (alertBox) {
+            alertBox.textContent = 'Please choose both a start and end date/time.';
+            alertBox.classList.remove('d-none');
+        }
+        return;
+    }
+
+    if (new Date(eVal) <= new Date(sVal)) {
+        if (alertBox) {
+            alertBox.textContent = 'End Date & Time must be strictly after Start Date & Time.';
+            alertBox.classList.remove('d-none');
+        }
+        return;
+    }
+
+    const sel = document.getElementById('eVenue');
+    const opt = sel ? sel.options[sel.selectedIndex] : null;
+    const maxCap = opt ? parseInt(opt.getAttribute('data-capacity') || '500') : 500;
+    const qty = parseInt(document.getElementById('tQty').value || 0);
+
+    if (qty > maxCap) {
+        if (alertBox) {
+            alertBox.textContent = `Ticket quantity (${qty}) exceeds the selected venue maximum capacity (${maxCap}).`;
+            alertBox.classList.remove('d-none');
+        }
+        return;
+    }
+
     const payload = {
         title: document.getElementById('eTitle').value,
         category: document.getElementById('eCat').value,
-        venue_id: parseInt(document.getElementById('eVenue').value),
-        start_time: document.getElementById('eStart').value,
-        end_time: document.getElementById('eEnd').value,
+        venue_id: parseInt(sel.value),
+        start_time: sVal,
+        end_time: eVal,
         description: document.getElementById('eDesc').value,
+        status: 'published',
         ticket_categories: [{
             name: document.getElementById('tName').value,
             price: parseFloat(document.getElementById('tPrice').value),
-            quantity: parseInt(document.getElementById('tQty').value)
+            quantity: qty
         }]
     };
+
+    if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> VenueAgent Validating...';
+    }
+
     try {
         const res = await fetch('/api/events', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(payload)
         });
         const d = await res.json();
-        if (!res.ok) throw new Error(d.detail || 'Event creation refused by VenueAgent');
-        alert('Event successfully created and published!');
-        window.location.reload();
-    } catch (err) { alert(err.message); }
+        if (!res.ok) {
+            throw new Error(d.detail || 'Event creation refused by VenueAgent');
+        }
+
+        if (successBox) {
+            successBox.textContent = '✓ Event agreed by VenueAgent and published successfully! Reloading...';
+            successBox.classList.remove('d-none');
+        }
+        setTimeout(() => {
+            window.location.reload();
+        }, 600);
+    } catch (err) {
+        if (alertBox) {
+            alertBox.textContent = err.message;
+            alertBox.classList.remove('d-none');
+        } else {
+            alert(err.message);
+        }
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="bi bi-calendar-plus me-1"></i> Submit to VenueAgent &amp; Publish';
+        }
+    }
 }
 
 async function cancelEvent(id, title) {

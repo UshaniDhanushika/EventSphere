@@ -234,6 +234,15 @@ class VenueAgent(BaseAgent):
             end = datetime.fromisoformat(message.content.get("end_time"))
             exclude_id = message.content.get("exclude_event_id")
 
+            if end <= start:
+                return AgentMessage(
+                    sender=self.name,
+                    receiver=message.sender,
+                    performative="REFUSE",
+                    content={"reason": "End time must be after start time"},
+                    conversation_id=message.conversation_id
+                )
+
             venue = db.query(Venue).filter(Venue.id == venue_id).first()
             if not venue:
                 return AgentMessage(

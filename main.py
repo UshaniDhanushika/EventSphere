@@ -383,7 +383,7 @@ def page_admin_dashboard(
         return RedirectResponse(url="/login", status_code=302)
 
     venues = db.query(Venue).all()
-    events = db.query(Event).all()
+    events = db.query(Event).order_by(Event.id.desc()).all()
     bookings = db.query(Booking).all()
     agent_messages = db.query(AgentMessageModel).order_by(AgentMessageModel.created_at.desc()).limit(100).all()
     escalated_hires = db.query(PrivateHire).filter(PrivateHire.status == "escalated").all()
@@ -405,7 +405,9 @@ def page_admin_dashboard(
         rev = sum(b.total_price for b in ev_bookings)
         checkins = db.query(Ticket).filter(Ticket.event_id == ev.id, Ticket.status == "admitted").count()
 
-        total_cap = sum(c.total_quantity for c in ev.ticket_categories) or ev.venue.capacity
+        venue_name = ev.venue.name if ev.venue else "Campus Venue"
+        venue_cap = ev.venue.capacity if ev.venue else 0
+        total_cap = sum(c.total_quantity for c in ev.ticket_categories) or venue_cap
         fill_pct = min(100, int((sold / max(1, total_cap)) * 100))
 
         total_tickets_sold += sold
@@ -417,8 +419,8 @@ def page_admin_dashboard(
             "title": ev.title,
             "category": ev.category,
             "start_time": ev.start_time,
-            "venue_name": ev.venue.name,
-            "venue_capacity": ev.venue.capacity,
+            "venue_name": venue_name,
+            "venue_capacity": venue_cap,
             "total_capacity": total_cap,
             "sold": sold,
             "checkins": checkins,
@@ -742,6 +744,20 @@ async def create_event(
     user: User = Depends(require_role("admin")),
     db: Session = Depends(get_db)
 ):
+    # Validate date parsing and range
+    try:
+        start_dt = datetime.fromisoformat(event_in.start_time)
+        end_dt = datetime.fromisoformat(event_in.end_time)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid date format: {str(e)}")
+
+    if end_dt <= start_dt:
+        raise HTTPException(status_code=400, detail="Event end time must be strictly after start time.")
+
+    venue = db.query(Venue).filter(Venue.id == event_in.venue_id).first()
+    if not venue:
+        raise HTTPException(status_code=400, detail="Selected venue does not exist.")
+
     # Rule V1: Ask VenueAgent to check slot & turnaround buffer
     msg = AgentMessage(
         sender="AdminController",
@@ -757,10 +773,13 @@ async def create_event(
     res = await message_bus.send(msg)
     if not res or res.performative != "AGREE":
         reason = res.content.get("reason", "Slot rejected by VenueAgent") if res else "No response"
-        raise HTTPException(status_code=400, detail=f"VenueAgent refused slot: {reason}")
+        suggested = res.content.get("suggested_slot") if res else None
+        detail_msg = f"VenueAgent refused slot: {reason}"
+        if suggested:
+            detail_msg += f" Suggested alternative: {suggested.get('start_time')} to {suggested.get('end_time')}."
+        raise HTTPException(status_code=400, detail=detail_msg)
 
     # Check total tickets does not exceed venue capacity
-    venue = db.query(Venue).filter(Venue.id == event_in.venue_id).first()
     categories_in = event_in.ticket_categories or [TicketCategoryInput(name="Standard", price=20.0, quantity=min(100, venue.capacity))]
     total_requested_tickets = sum(c.quantity for c in categories_in)
 
@@ -770,9 +789,7 @@ async def create_event(
             detail=f"Total tickets ({total_requested_tickets}) exceeds venue capacity ({venue.capacity})."
         )
 
-    start_dt = datetime.fromisoformat(event_in.start_time)
-    end_dt = datetime.fromisoformat(event_in.end_time)
-    status_choice = event_in.status if event_in.status in ["published", "draft"] else "published"
+    status_choice = "published"
 
     new_event = Event(
         title=event_in.title,
@@ -798,6 +815,7 @@ async def create_event(
         )
         db.add(tc)
     db.commit()
+    db.refresh(new_event)
 
     return {"message": f"Event {status_choice} successfully", "event_id": new_event.id, "status": status_choice}
 

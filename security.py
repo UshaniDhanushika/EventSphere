@@ -45,14 +45,18 @@ def read_access_token(token: str) -> Optional[dict]:
 def extract_token_from_request(request: Request) -> Optional[str]:
     """Extracts bearer token from either Authorization header or cookies."""
     auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        return auth_header.split(" ", 1)[1]
+    if auth_header:
+        auth_header = auth_header.strip().strip('"').strip("'")
+        if auth_header.startswith("Bearer "):
+            return auth_header.split(" ", 1)[1].strip()
+        return auth_header
     
     # Fallback to browser cookie for direct web browser usage
     cookie_token = request.cookies.get("access_token")
     if cookie_token:
+        cookie_token = cookie_token.strip().strip('"').strip("'")
         if cookie_token.startswith("Bearer "):
-            return cookie_token.split(" ", 1)[1]
+            return cookie_token.split(" ", 1)[1].strip()
         return cookie_token
     return None
 
