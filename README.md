@@ -37,7 +37,7 @@ The database automatically initializes with three role-specific demo accounts:
 | :--- | :--- | :--- | :--- |
 | **Admin** | `admin@eventsphere.com` | `admin123` | Full dashboard, venue/event CRUD, cancel/refund, hire review, agent trace log |
 | **Gate Staff** | `staff@eventsphere.com` | `staff123` | Camera QR scanner, manual ticket check-in |
-| **Attendee** | `attendee@eventsphere.com` | `attendee123` | Browse events, simulated booking, digital tickets, private hire request, waitlists |
+| **Attendee** | `student1@student.edu` | `Password123!` | Browse events, simulated booking, digital tickets, private hire request, waitlists |
 
 ---
 

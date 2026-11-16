@@ -353,7 +353,7 @@ def test_role_based_access_control():
     """Refuse unauthorized roles from staff scanner."""
     client = TestClient(app, raise_server_exceptions=False)
     # Attendee user token trying to access /scanner -> 403 Forbidden
-    attendee_token = create_access_token("attendee@eventsphere.com", "attendee")
+    attendee_token = create_access_token("student1@student.edu", "attendee")
     res = client.get("/scanner", headers={"Authorization": f"Bearer {attendee_token}"})
     assert res.status_code == 403
 

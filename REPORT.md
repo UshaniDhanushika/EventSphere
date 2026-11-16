@@ -118,4 +118,4 @@ tests/test_eventsphere.py::test_agent_http_inbox PASSED
 | :--- | :--- | :--- |
 | **Admin** | `admin@eventsphere.com` | `admin123` |
 | **Gate Staff** | `staff@eventsphere.com` | `staff123` |
-| **Attendee** | `attendee@eventsphere.com` | `attendee123` |
+| **Attendee** | `student1@student.edu` | `Password123!` |

@@ -43,9 +43,9 @@ def seed_database():
                 role="staff"
             )
             attendee = User(
-                username="attendee@eventsphere.com",
-                email="attendee@eventsphere.com",
-                password_hash=hash_password("attendee123"),
+                username="student1@student.edu",
+                email="student1@student.edu",
+                password_hash=hash_password("Password123!"),
                 role="attendee"
             )
             db.add_all([admin, staff, attendee])
@@ -207,6 +207,40 @@ def seed_database():
             db.commit()
 
             print("[Seed] EventSphere database successfully initialized with demo accounts, venues, and events.")
+
+        # Always guarantee required demo account credentials on existing databases
+        # 1. Attendee: student1@student.edu / Password123!
+        att = db.query(User).filter(User.username == "student1@student.edu").first()
+        if not att:
+            old_att = db.query(User).filter(User.username == "attendee@eventsphere.com").first()
+            if old_att:
+                old_att.username = "student1@student.edu"
+                old_att.email = "student1@student.edu"
+                old_att.password_hash = hash_password("Password123!")
+            else:
+                att = User(
+                    username="student1@student.edu",
+                    email="student1@student.edu",
+                    password_hash=hash_password("Password123!"),
+                    role="attendee"
+                )
+                db.add(att)
+            db.commit()
+        else:
+            att.password_hash = hash_password("Password123!")
+            db.commit()
+
+        # 2. Event Staff: staff@eventsphere.com / staff123
+        stf = db.query(User).filter(User.username == "staff@eventsphere.com").first()
+        if stf:
+            stf.password_hash = hash_password("staff123")
+            db.commit()
+
+        # 3. Admin: admin@eventsphere.com / admin123
+        adm = db.query(User).filter(User.username == "admin@eventsphere.com").first()
+        if adm:
+            adm.password_hash = hash_password("admin123")
+            db.commit()
     finally:
         db.close()
 
