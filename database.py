@@ -9,10 +9,12 @@ if not raw_url or not raw_url.strip():
 else:
     DATABASE_URL = raw_url.strip()
 
-# Cloud providers (Heroku, Render, older Railway templates) may supply postgres://
-# SQLAlchemy 1.4+ requires postgresql://
+# Cloud providers (Heroku, Render, older Railway templates) may supply postgres:// or postgresql://
+# Explicitly use postgresql+psycopg2:// driver to guarantee compatibility with psycopg2
 if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+elif DATABASE_URL.startswith("postgresql://") and not DATABASE_URL.startswith("postgresql+"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 # SQLite needs check_same_thread=False for FastAPI multithreaded requests
 is_sqlite = DATABASE_URL.startswith("sqlite")
