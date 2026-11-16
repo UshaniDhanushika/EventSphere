@@ -1,5 +1,6 @@
 import io
 import asyncio
+import traceback
 from datetime import datetime, timedelta
 from typing import List, Optional
 from contextlib import asynccontextmanager
@@ -39,6 +40,8 @@ from seed_data import seed_database
 # ==========================================
 async def waitlist_proactive_sweep_loop():
     """Proactive agent behaviour: runs every 15s to expire holds and re-offer freed seats."""
+    # Stagger initial sweep to give database time to initialize
+    await asyncio.sleep(5)
     while True:
         try:
             await waitlist_agent.proactive_expiry_sweep()
@@ -76,6 +79,31 @@ app.add_middleware(
 )
 
 templates = Jinja2Templates(directory="templates")
+
+
+# ==========================================
+# Health Check Endpoint (Railway / Monitoring)
+# ==========================================
+@app.get("/health", tags=["System"])
+def health_check():
+    """Lightweight zero-dependency health check endpoint for Railway container verification."""
+    return {"status": "ok", "service": "eventsphere", "agents": "active"}
+
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Logs unhandled 500 errors to container console so Railway logs reveal exact tracebacks."""
+    print(f"[Unhandled Error] {request.method} {request.url.path}: {exc}")
+    traceback.print_exc()
+    if request.url.path.startswith("/api/"):
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error", "error": str(exc)}
+        )
+    return HTMLResponse(
+        status_code=500,
+        content="<div style='font-family:sans-serif;padding:40px;text-align:center;'><h2>500 Internal Server Error</h2><p>An unexpected server error occurred. Check Railway deployment logs for full traceback.</p><a href='/'>Back to Home</a></div>"
+    )
 
 
 # ==========================================

@@ -108,32 +108,35 @@ The suite contains 14 tests:
 
 ## ☁️ Deployment (Railway + PostgreSQL)
 
-The repository is ready for [Railway](https://railway.com): `railway.json` sets the start command and health check, `.python-version` pins Python 3.12, and `Procfile` is kept as a fallback.
+The repository is fully configured for zero-downtime deployment on [Railway](https://railway.com) using `Dockerfile`, `railway.toml`, `railway.json`, and `Procfile`.
 
-1. Push the repository to **GitHub** (the `.gitignore` keeps `.env`, `*.db` and caches out of Git).
+1. Push the repository changes to **GitHub**:
+   ```bash
+   git add .
+   git commit -m "Fix Railway deployment configuration, add healthcheck and DB retry"
+   git push origin main
+   ```
 2. In Railway, click **New Project → Deploy from GitHub repo** and pick the repository.
 3. In the same project, click **+ New → Database → PostgreSQL**.
-4. Open the web service → **Variables** and add:
-   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (reference variable to the Postgres service)
-   - `SECRET_KEY` = a long random string (for example the output of `python -c "import secrets; print(secrets.token_hex(32))"`)
-5. Open **Settings → Networking → Generate Domain**. Railway gives a public HTTPS address such as `https://eventsphere-production.up.railway.app`.
-6. On first start the app creates all tables in PostgreSQL and seeds the demo accounts, venues and events. The WaitlistAgent sweep starts automatically.
+4. Open your web service → **Variables** tab and add:
+   - `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (Use "Add Reference" and select Postgres's `DATABASE_URL`)
+   - `SECRET_KEY` = a long random string (e.g. generated via `python -c "import secrets; print(secrets.token_hex(32))"`)
+5. Open **Settings → Networking → Generate Domain**. Railway assigns a public HTTPS domain (e.g., `https://eventsphere-production.up.railway.app`).
+6. The app automatically verifies connection via `/health`, boots with automatic database connection retries, creates all tables in PostgreSQL, and seeds demo accounts and events.
 
-Start command used by Railway:
-
+Start command used:
 ```bash
-uvicorn main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips=*
+python run.py
 ```
-
-`--proxy-headers` makes redirects use `https://` behind Railway's proxy. Run a single instance (one replica), because the WaitlistAgent sweep runs inside the web process.
 
 ### Environment variables
 
-| Variable | Purpose | Local default |
+| Variable | Purpose | Default |
 | :--- | :--- | :--- |
-| `DATABASE_URL` | SQLAlchemy database URL (PostgreSQL in production) | `sqlite:///./eventsphere.db` |
-| `SECRET_KEY` | Signs JWT session tokens; never commit the real value | development key in `security.py` |
-| `PORT` | Port to listen on (Railway sets this) | `8000` |
+| `DATABASE_URL` | PostgreSQL or SQLite connection string | `sqlite:///./eventsphere.db` |
+| `SECRET_KEY` | Signs JWT session tokens | Auto-generated development fallback |
+| `PORT` | Dynamic port injected by Railway | `8000` |
+| `HOST` | Bind host address | `0.0.0.0` |
 
 ---
 

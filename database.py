@@ -2,20 +2,40 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Use environment variable DATABASE_URL for Render / PostgreSQL deployment, default to SQLite locally
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./eventsphere.db")
+# Use environment variable DATABASE_URL for Railway / Render / PostgreSQL deployment, default to SQLite locally
+raw_url = os.getenv("DATABASE_URL")
+if not raw_url or not raw_url.strip():
+    DATABASE_URL = "sqlite:///./eventsphere.db"
+else:
+    DATABASE_URL = raw_url.strip()
 
-# Render gives postgres:// but SQLAlchemy 1.4+ expects postgresql://
+# Cloud providers (Heroku, Render, older Railway templates) may supply postgres://
+# SQLAlchemy 1.4+ requires postgresql://
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
 # SQLite needs check_same_thread=False for FastAPI multithreaded requests
-connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
+is_sqlite = DATABASE_URL.startswith("sqlite")
+connect_args = {"check_same_thread": False} if is_sqlite else {}
+
+engine_kwargs = {
+    "connect_args": connect_args,
+    "pool_pre_ping": True,
+    "echo": False,
+}
+
+# For PostgreSQL on cloud platforms like Railway, enable connection pool pre-ping & recycle
+# to prevent "server closed the connection unexpectedly" 500 errors after idle periods.
+if not is_sqlite:
+    engine_kwargs.update({
+        "pool_recycle": 300,
+        "pool_size": 10,
+        "max_overflow": 20,
+    })
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args=connect_args,
-    echo=False
+    **engine_kwargs
 )
 
 SessionLocal = sessionmaker(

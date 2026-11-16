@@ -12,7 +12,8 @@ from database import get_db
 # Password hashing
 password_hash = PasswordHash.recommended()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "eventsphere-super-secure-key-2026-viva")
+_raw_secret = os.getenv("SECRET_KEY")
+SECRET_KEY = _raw_secret.strip() if _raw_secret and _raw_secret.strip() else "eventsphere-super-secure-key-2026-viva"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours for comfortable demoing
 

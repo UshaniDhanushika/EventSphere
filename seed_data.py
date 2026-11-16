@@ -1,3 +1,4 @@
+import time
 from datetime import datetime, timedelta
 from database import SessionLocal, Base, engine
 from models import (
@@ -7,8 +8,22 @@ from security import hash_password
 import secrets
 
 def seed_database():
-    """Initializes database tables and creates default demo accounts, venues, and sample events."""
-    Base.metadata.create_all(bind=engine)
+    """Initializes database tables and creates default demo accounts, venues, and sample events with connection retry."""
+    max_retries = 10
+    retry_interval = 2
+
+    # Retry loop to allow cloud databases (e.g. Railway PostgreSQL) time to finish booting
+    for attempt in range(1, max_retries + 1):
+        try:
+            Base.metadata.create_all(bind=engine)
+            break
+        except Exception as e:
+            if attempt == max_retries:
+                print(f"[Seed] Database connection failed after {max_retries} attempts: {e}")
+                raise
+            print(f"[Seed] Database not ready yet (attempt {attempt}/{max_retries}): {e}. Retrying in {retry_interval}s...")
+            time.sleep(retry_interval)
+
     db = SessionLocal()
     try:
         # Check if already seeded
